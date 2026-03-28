@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>合同管理系统 | 一体化数字台帐</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            background: #f3f6fb;
+            padding: 30px 24px;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .title-section h1 {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: #0b2a4a;
+            letter-spacing: -0.3px;
+        }
+
+        .title-section p {
+            color: #4a6a8b;
+            font-size: 0.9rem;
+            margin-top: 6px;
+        }
+
+        .clear-btn {
+            background: #ffffff;
+            border: 1px solid #dce5f2;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #b91c1c;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .clear-btn:hover {
+            background: #fee2e2;
+            border-color: #f5a3a3;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 28px;
+            padding: 20px 22px;
+            box-shadow: 0 8px 20px rgba(0, 20, 40, 0.06);
+            transition: all 0.25s ease;
+            cursor: pointer;
+            border: 1px solid #eef3fc;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .module-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 30px -12px rgba(0, 32, 64, 0.12);
+            border-color: #cddff5;
+        }
+
+        .card-icon {
+            font-size: 2.2rem;
+            color: #1e3a6b;
+            margin-bottom: 16px;
+        }
+
+        .module-card h3 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0b2a4a;
+            margin-bottom: 8px;
+        }
+
+        .module-card p {
+            color: #5d7184;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 20px;
+            flex: 1;
+        }
+
+        .detail-btn {
+            background: #1e3a6b;
+            color: white;
+            border: none;
+            padding: 8px 0;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .detail-btn:hover {
+            background: #112f54;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 48px;
+            color: #6c86a3;
+            font-size: 0.8rem;
+            border-top: 1px solid #e0edfc;
+            padding-top: 24px;
+        }
+
+        .toast-message {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1e3a6b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 48px;
+            z-index: 2000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            font-weight: 500;
+            animation: slideIn 0.25s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 20px 16px; }
+            .title-section h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="main-header">
+        <div class="title-section">
+            <h1><i class="fas fa-file-signature" style="margin-right: 12px;"></i>合同智慧管理系统</h1>
+            <p>全生命周期管理 · 收付款联动 · 实时台账预警</p>
+        </div>
+        <button id="clearDataBtn" class="clear-btn"><i class="fas fa-trash-alt"></i> 清空所有数据</button>
+    </div>
+
+    <div class="card-grid" id="moduleGrid"></div>
+    <div class="footer-note">
+        <i class="fas fa-database"></i> 数据存储在浏览器本地 (LocalStorage) · 销售合同台账已扩展完整字段
+    </div>
+</div>
+
+<script>
+    // ========================== 存储键名 ==========================
+    const STORAGE_KEYS = { 
+        CONTRACTS: 'contracts_data', 
+        RECEIPTS: 'receipts_data', 
+        PAYMENTS: 'payments_data', 
+        SUPPLIERS: 'suppliers_data', 
+        DRAFT: 'contract_draft',
+        SALES_EXT: 'sales_contract_ext'
+    };
+    
+    // 初始化存储
+    if (!localStorage.getItem(STORAGE_KEYS.CONTRACTS)) localStorage.setItem(STORAGE_KEYS.CONTRACTS, '[]');
+    if (!localStorage.getItem(STORAGE_KEYS.RECEIPTS)) localStorage.setItem(STORAGE_KEYS.RECEIPTS, '[]');
+    if (!localStorage.getItem(STORAGE_KEYS.PAYMENTS)) localStorage.setItem(STORAGE_KEYS.PAYMENTS, '[]');
+    if (!localStorage.getItem(STORAGE_KEYS.SUPPLIERS)) localStorage.setItem(STORAGE_KEYS.SUPPLIERS, '[]');
+    if (!localStorage.getItem(STORAGE_KEYS.DRAFT)) localStorage.setItem(STORAGE_KEYS.DRAFT, '{}');
+    if (!localStorage.getItem(STORAGE_KEYS.SALES_EXT)) localStorage.setItem(STORAGE_KEYS.SALES_EXT, '{}');
+
+    function showToast(message, isSuccess = true) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.style.background = isSuccess ? '#1e3a6b' : '#dc2626';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => { if(toast && toast.remove) toast.remove(); }, 3000);
+    }
+
+    document.getElementById('clearDataBtn').addEventListener('click', () => {
+        if (confirm('⚠️ 确定要清空所有合同、收付款和供应商数据吗？此操作不可恢复！')) {
+            localStorage.setItem(STORAGE_KEYS.CONTRACTS, '[]');
+            localStorage.setItem(STORAGE_KEYS.RECEIPTS, '[]');
+            localStorage.setItem(STORAGE_KEYS.PAYMENTS, '[]');
+            localStorage.setItem(STORAGE_KEYS.SUPPLIERS, '[]');
+            localStorage.setItem(STORAGE_KEYS.DRAFT, '{}');
+            localStorage.setItem(STORAGE_KEYS.SALES_EXT, '{}');
+            showToast('✅ 所有数据已清空，可以重新录入合同', true);
+        }
+    });
+
+    window.openModule = function(moduleId) {
+        const html = generateModulePage(moduleId);
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const newWin = window.open(url, '_blank');
+        if (!newWin) alert('⚠️ 请允许浏览器打开新窗口（弹窗可能被拦截），或在设置中允许弹出窗口。');
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch(e){} }, 5000);
+    };
+
+    const MODULES = [
+        { id: 'contractEntry', name: '📄 合同录入', desc: '支持自动编号、附件上传、草稿保存，采购/销售合同一键入库' },
+        { id: 'contractLedger', name: '📒 合同台账', desc: '销售合同含完整扩展字段(项目/订单/开票/回款)，采购合同简洁台账' },
+        { id: 'supplierManagement', name: '🏭 供应商管理', desc: '维护供应商名录，支持内嵌编辑与删除' },
+        { id: 'paymentManagement', name: '💰 收付款管理', desc: '收款/付款明细记录，联动合同金额更新' },
+        { id: 'accountsReceivable', name: '📈 应收账款', desc: '销售合同未收金额监控，账期与到期日预警' },
+        { id: 'accountsPayable', name: '📉 应付账款', desc: '采购合同应付跟踪，清晰展示未付余额' },
+        { id: 'ledgerQuery', name: '🔍 台账查询', desc: '多条件检索合同，快速定位关键业务' },
+        { id: 'analyticsBoard', name: '📊 分析看板', desc: '执行中合同、现金流概览' },
+        { id: 'dataExport', name: '📎 数据导出', desc: '按年月/类型导出CSV，Excel直接打开' }
+    ];
+
+    const grid = document.getElementById('moduleGrid');
+    function renderCards() {
+        grid.innerHTML = '';
+        MODULES.forEach(mod => {
+            const card = document.createElement('div');
+            card.className = 'module-card';
+            let iconHtml = '<i class="fas fa-cube"></i>';
+            if(mod.id === 'contractEntry') iconHtml = '<i class="fas fa-pen-alt"></i>';
+            else if(mod.id === 'contractLedger') iconHtml = '<i class="fas fa-table-list"></i>';
+            else if(mod.id === 'supplierManagement') iconHtml = '<i class="fas fa-truck"></i>';
+            else if(mod.id === 'paymentManagement') iconHtml = '<i class="fas fa-hand-holding-usd"></i>';
+            else if(mod.id === 'accountsReceivable') iconHtml = '<i class="fas fa-chart-line"></i>';
+            else if(mod.id === 'accountsPayable') iconHtml = '<i class="fas fa-credit-card"></i>';
+            else if(mod.id === 'ledgerQuery') iconHtml = '<i class="fas fa-search"></i>';
+            else if(mod.id === 'analyticsBoard') iconHtml = '<i class="fas fa-chart-pie"></i>';
+            else if(mod.id === 'dataExport') iconHtml = '<i class="fas fa-file-export"></i>';
+            
+            card.innerHTML = `
+                <div class="card-icon">${iconHtml}</div>
+                <h3>${mod.name}</h3>
+                <p>${mod.desc}</p>
+                <button class="detail-btn" data-module-btn="${mod.id}">打开详情 <i class="fas fa-arrow-right"></i></button>
+            `;
+            const btn = card.querySelector('.detail-btn');
+            card.addEventListener('click', (e) => {
+                if(e.target !== btn && !btn.contains(e.target)) window.openModule(mod.id);
+            });
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.openModule(mod.id);
+            });
+            grid.appendChild(card);
+        });
+    }
+    renderCards();
+
+    // ======================= 页面生成器核心 =======================
+    function generateModulePage(moduleId) {
+        const pages = {
+            contractEntry: generateContractEntryHTML,
+            contractLedger: generateContractLedgerHTML,
+            supplierManagement: generateSupplierManagementHTML,
+            paymentManagement: generatePaymentManagementHTML,
+            accountsReceivable: generateAccountsReceivableHTML,
+            accountsPayable: generateAccountsPayableHTML,
+            ledgerQuery: generateLedgerQueryHTML,
+            analyticsBoard: generateAnalyticsBoardHTML,
+            dataExport: generateDataExportHTML
+        };
+        const content = pages[moduleId] ? pages[moduleId]() : '<div style="padding:40px;text-align:center;">模块暂未开放</div>';
+        const titleMap = {
+            contractEntry: '合同录入', contractLedger: '合同台账', supplierManagement: '供应商管理',
+            paymentManagement: '收付款管理', accountsReceivable: '应收账款', accountsPayable: '应付账款',
+            ledgerQuery: '台账查询', analyticsBoard: '分析看板', dataExport: '数据导出'
+        };
+        const title = titleMap[moduleId] || '详情页';
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>合同管理系统 - ${title}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"><style>*{margin:0;padding:0;box-sizing:border-box;font-family:"Inter",sans-serif;}body{background:#f3f6fb;padding:20px;} .container{max-width:1600px;margin:0 auto;background:white;border-radius:32px;padding:30px;box-shadow:0 20px 40px rgba(0,20,40,0.1);} .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;} .header h1{font-size:1.8rem;color:#0b2a4a;} .close-btn{background:#1e3a6b;color:white;border:none;padding:10px 24px;border-radius:40px;font-weight:600;cursor:pointer;} .close-btn:hover{background:#112f54;} .data-table{width:100%;border-collapse:collapse;background:white;border-radius:18px;overflow-x:auto;display:block;box-shadow:0 4px 16px rgba(0,0,0,0.02);font-size:0.85rem;} .data-table thead,.data-table tbody{display:table;width:100%;table-layout:fixed;} .data-table th,.data-table td{padding:10px 8px;border-bottom:1px solid #e2ecff;color:#1f3a5e;text-align:left;word-break:break-word;} .data-table th{background:#1e3a6b;color:white;font-weight:600;} .editable-input,.editable-select{width:100%;padding:6px 8px;border-radius:18px;border:1px solid #c5daf8;background:white;font-size:0.8rem;} .btn-query{background:#1e3a6b;color:white;border:none;padding:10px 28px;border-radius:30px;font-weight:600;cursor:pointer;margin-top:15px;} .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;background:#f9fdff;padding:25px;border-radius:24px;} .form-item{display:flex;flex-direction:column;gap:6px;} .form-item.full-width{grid-column:span 3;} .form-item label{font-weight:600;color:#1d426b;font-size:0.85rem;} .form-item input,.form-item select,.form-item textarea{padding:10px;border-radius:20px;border:1px solid #c5daf8;background:white;} .stats-row{display:flex;gap:15px;flex-wrap:wrap;margin-bottom:25px;} .stat-card{background:#f8fcff;border-radius:22px;padding:20px;flex:1 1 180px;border:1px solid #dae8fc;text-align:center;} .table-section{margin-bottom:35px;overflow-x:auto;} .table-section h2{color:#0b2a4a;margin-bottom:12px;font-size:1.3rem;display:flex;align-items:center;gap:8px;} .delete-btn{background:#ef4444;color:white;border:none;padding:4px 12px;border-radius:20px;font-size:0.7rem;cursor:pointer;} .delete-btn:hover{background:#dc2626;} .add-btn{background:#10b981;color:white;border:none;padding:8px 20px;border-radius:30px;font-weight:600;cursor:pointer;margin:10px 0;} .toast-message{position:fixed;bottom:30px;right:30px;background:#1e3a6b;color:white;padding:12px 24px;border-radius:40px;z-index:1000;animation:slideIn 0.3s;} @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}</style></head><body><div class="container"><div class="header"><h1><i class="fas fa-cubes"></i> ${title}</h1><button class="close-btn" onclick="window.close()"><i class="fas fa-times"></i> 关闭</button></div>${content}</div></body></html>`;
+    }
+
+    // ---------- 合同录入模块 ----------
+    function generateContractEntryHTML() {
+        return `
+            <form class="form-grid" id="contractForm">
+                <div class="form-item"><label>合同编号 <span style="color:#888; font-size:0.75rem;">(选填，不填自动生成)</span></label><input type="text" id="contractNo" placeholder="留空将自动生成唯一编号"></div>
+                <div class="form-item"><label>合同名称 *</label><input type="text" id="contractName" placeholder="请输入合同名称"></div>
+                <div class="form-item"><label id="partyLabel">客户/供应商名称 *</label><input type="text" id="partyName" placeholder="请输入客户或供应商名称" list="supplierList"><datalist id="supplierList"></datalist></div>
+                <div class="form-item"><label>合同金额 *</label><input type="number" id="contractAmount" placeholder="请输入合同金额" step="0.01" min="0"></div>
+                <div class="form-item"><label>合同类型 *</label><select id="contractType" onchange="updatePartyField()"><option value="">请选择</option><option value="purchase">采购合同</option><option value="sales">销售合同</option></select></div>
+                <div class="form-item"><label>签订日期</label><input type="date" id="signDate"></div>
+                <div class="form-item"><label>开始日期</label><input type="date" id="startDate"></div>
+                <div class="form-item"><label>结束日期</label><input type="date" id="endDate"></div>
+                <div class="form-item"><label>合同状态</label><select id="contractStatus"><option value="">请选择</option><option>进行中</option><option>草稿</option><option>已归档</option></select></div>
+                <div class="form-item"><label>负责人</label><input type="text" id="responsiblePerson"></div>
+                <div class="form-item full-width"><label>备注</label><textarea id="remarks" rows="3"></textarea></div>
+                <div class="form-item full-width"><label><i class="fas fa-paperclip"></i> 上传附件(仅元数据)</label><div class="upload-area" id="uploadArea"><i class="fas fa-cloud-upload-alt"></i><p>点击或拖拽上传文件（记录名称）</p><input type="file" id="fileInput" multiple style="display:none;"></div><div class="file-list" id="fileList"></div></div>
+            </form>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:20px;"><button class="btn-query" type="button" onclick="resetForm()" style="background:#6c7e99;">清空草稿</button><button class="btn-query" type="button" onclick="saveDraft()" style="background:#11998e;">保存草稿</button><button class="btn-query" type="button" onclick="saveContract()">保存合同</button></div>
+            <div id="toast" style="position:fixed;bottom:30px;right:30px;z-index:1000;"></div>
+            <script>
+                var uploadedFiles = [];
+                function showToastMsg(msg, success){ var t=document.getElementById('toast'); if(t){ t.innerHTML='<div class="toast-message" style="background:'+(success?'#1e3a6b':'#dc2626')+'">'+msg+'</div>'; setTimeout(function(){t.innerHTML='';},2500);} }
+                function updateSupplierList(){ try{ var sup=JSON.parse(localStorage.getItem('suppliers_data')||'[]'); var opts=''; sup.forEach(s=>opts+='<option value="'+s.name+'">'); document.getElementById('supplierList').innerHTML=opts; }catch(e){}}
+                window.updatePartyField=function(){ var type=document.getElementById('contractType').value; var lbl=document.getElementById('partyLabel'); if(type==='purchase') lbl.textContent='供应商名称 *'; else if(type==='sales') lbl.textContent='客户名称 *'; else lbl.textContent='客户/供应商名称 *'; updateSupplierList(); };
+                var uploadArea=document.getElementById('uploadArea'), fileInput=document.getElementById('fileInput'), fileListDiv=document.getElementById('fileList');
+                uploadArea.addEventListener('click',()=>fileInput.click()); fileInput.addEventListener('change',e=>{ for(let f of e.target.files) uploadedFiles.push({name:f.name,size:f.size,type:f.type}); displayFiles(); });
+                function displayFiles(){ var html=''; for(var i=0;i<uploadedFiles.length;i++){ html+='<div class="file-item"><span><i class="fas fa-file"></i> '+uploadedFiles[i].name+'</span><button class="remove-file" onclick="removeFile('+i+')">×</button></div>'; } fileListDiv.innerHTML=html; }
+                window.removeFile=function(i){ uploadedFiles.splice(i,1); displayFiles(); };
+                function loadDraft(){ try{ var d=JSON.parse(localStorage.getItem('contract_draft')||'{}'); if(d.contractNo) document.getElementById('contractNo').value=d.contractNo; if(d.contractName) document.getElementById('contractName').value=d.contractName; if(d.partyName) document.getElementById('partyName').value=d.partyName; if(d.contractAmount) document.getElementById('contractAmount').value=d.contractAmount; if(d.contractType) document.getElementById('contractType').value=d.contractType; if(d.signDate) document.getElementById('signDate').value=d.signDate; if(d.startDate) document.getElementById('startDate').value=d.startDate; if(d.endDate) document.getElementById('endDate').value=d.endDate; if(d.contractStatus) document.getElementById('contractStatus').value=d.contractStatus; if(d.responsiblePerson) document.getElementById('responsiblePerson').value=d.responsiblePerson; if(d.remarks) document.getElementById('remarks').value=d.remarks; if(d.files) uploadedFiles=d.files; displayFiles(); if(d.contractType) updatePartyField(); }catch(e){} }
+                window.saveDraft=function(){ var draft={contractNo:document.getElementById('contractNo').value,contractName:document.getElementById('contractName').value,partyName:document.getElementById('partyName').value,contractAmount:document.getElementById('contractAmount').value,contractType:document.getElementById('contractType').value,signDate:document.getElementById('signDate').value,startDate:document.getElementById('startDate').value,endDate:document.getElementById('endDate').value,contractStatus:document.getElementById('contractStatus').value,responsiblePerson:document.getElementById('responsiblePerson').value,remarks:document.getElementById('remarks').value,files:uploadedFiles}; localStorage.setItem('contract_draft',JSON.stringify(draft)); showToastMsg('草稿已保存',true); };
+                window.resetForm=function(){ document.getElementById('contractForm').reset(); uploadedFiles=[]; fileListDiv.innerHTML=''; localStorage.removeItem('contract_draft'); showToastMsg('草稿已清空',true); };
+                window.saveContract=function(){ var no=document.getElementById('contractNo').value.trim(); var name=document.getElementById('contractName').value.trim(); var party=document.getElementById('partyName').value.trim(); var amount=parseFloat(document.getElementById('contractAmount').value); var type=document.getElementById('contractType').value; if(!name||!party||isNaN(amount)||amount<0||!type){ showToastMsg('请填写完整(合同名称/客户名称/合同金额/类型)',false); return; }
+                var contracts=JSON.parse(localStorage.getItem('contracts_data')||'[]'); if(!no){ no='CT-'+Date.now().toString().slice(-8); while(contracts.some(c=>c.contractNo===no)) no='CT-'+Date.now().toString().slice(-8)+'-'+Math.floor(Math.random()*100); } else if(contracts.some(c=>c.contractNo===no)){ showToastMsg('合同编号已存在',false); return; }
+                var newContract={contractNo:no,contractName:name,partyName:party,contractAmount:amount,contractType:type,signDate:document.getElementById('signDate').value,startDate:document.getElementById('startDate').value,endDate:document.getElementById('endDate').value,contractStatus:document.getElementById('contractStatus').value||'草稿',responsiblePerson:document.getElementById('responsiblePerson').value,remarks:document.getElementById('remarks').value,files:uploadedFiles.map(f=>({name:f.name,size:f.size,type:f.type})),createdAt:new Date().toISOString()};
+                contracts.push(newContract); localStorage.setItem('contracts_data',JSON.stringify(contracts));
+                if(type==='sales'){ var rec=JSON.parse(localStorage.getItem('receipts_data')||'[]'); rec.push({date:new Date().toISOString().split('T')[0],contractNo:no,customer:party,receiptMethod:'',receiptAmount:amount,handler:newContract.responsiblePerson,remarks:'合同录入'}); localStorage.setItem('receipts_data',JSON.stringify(rec));
+                var extMap=JSON.parse(localStorage.getItem('sales_contract_ext')||'{}');
+                if(!extMap[no]) extMap[no]={seq:'',typeSub:'',projectName:'',orderNo:'',specModel:'',designer:'',internalProjectNo:'',projectStartDate:'',orderNode:'',quoteAmount:0,deliveryDate:'',invoiceStatus:'',invoiceDate:'',invoiceAmount:0,duePaymentDate:'',actualPaymentDate:'',receivedAmount:0,remarkExt:''};
+                localStorage.setItem('sales_contract_ext',JSON.stringify(extMap)); }
+                else if(type==='purchase'){ var pay=JSON.parse(localStorage.getItem('payments_data')||'[]'); pay.push({date:new Date().toISOString().split('T')[0],contractNo:no,supplier:party,paymentMethod:'',paymentAmount:amount,handler:newContract.responsiblePerson,remarks:'合同录入'}); localStorage.setItem('payments_data',JSON.stringify(pay)); }
+                showToastMsg('保存成功！编号:'+no,true); localStorage.removeItem('contract_draft'); resetForm(); };
+                loadDraft(); updateSupplierList();
+            <\/script>
+        `;
+    }
+
+    // 供应商管理
+    function generateSupplierManagementHTML() { return `<div class="table-section"><h2><i class="fas fa-truck"></i> 供应商列表</h2><table class="data-table"><thead> <th>编号</th><th>名称</th><th>联系人</th><th>电话</th><th>地址</th><th>操作</th> </thead><tbody id="supplierBody"></tbody> <button class="btn-query" onclick="addSupplier()"><i class="fas fa-plus"></i> 添加供应商</button><script>function loadSup(){var s=JSON.parse(localStorage.getItem('suppliers_data')||'[]');var t=document.getElementById('supplierBody');if(!s.length){t.innerHTML='<tr><td colspan="6" style="text-align:center">暂无数据</td></tr>';return;}var h='';for(var i=0;i<s.length;i++){h+='<tr><td><input class="editable-input" value="'+(s[i].code||'')+'" onchange="updateSup('+i+',\\'code\\',this.value)"></td><td><input class="editable-input" value="'+(s[i].name||'')+'" onchange="updateSup('+i+',\\'name\\',this.value)"></td><td><input class="editable-input" value="'+(s[i].contactPerson||'')+'" onchange="updateSup('+i+',\\'contactPerson\\',this.value)"></td><td><input class="editable-input" value="'+(s[i].phone||'')+'" onchange="updateSup('+i+',\\'phone\\',this.value)"></td><td><input class="editable-input" value="'+(s[i].address||'')+'" onchange="updateSup('+i+',\\'address\\',this.value)"></td><td><button class="delete-btn" onclick="delSup('+i+')">删除</button></td></tr>';} t.innerHTML=h;} window.updateSup=function(i,f,v){var s=JSON.parse(localStorage.getItem('suppliers_data')||'[]');if(s[i]){s[i][f]=v;localStorage.setItem('suppliers_data',JSON.stringify(s));}}; window.delSup=function(i){if(confirm('删除？')){var s=JSON.parse(localStorage.getItem('suppliers_data')||'[]');s.splice(i,1);localStorage.setItem('suppliers_data',JSON.stringify(s));loadSup();}}; function addSupplier(){var s=JSON.parse(localStorage.getItem('suppliers_data')||'[]');var id=Date.now();s.push({id:id,code:'SUP-'+id.toString().slice(-6),name:'新供应商',contactPerson:'',phone:'',address:''});localStorage.setItem('suppliers_data',JSON.stringify(s));loadSup();} loadSup();<\/script>`; }
+    
+    // ========== 合同台账模块（销售台账按钮在表格下方） ==========
+    function generateContractLedgerHTML() {
+        return `
+            <div class="table-section">
+                <h2><i class="fas fa-file-invoice-dollar"></i> 销售合同台账（完整字段）</h2>
+                <div style="overflow-x:auto; margin-top:15px;">
+                    <table class="data-table" style="min-width:2200px;">
+                        <thead>
+                            <tr>
+                                <th>序号</th><th>类型</th><th>项目名称</th><th>订单编号</th><th>规格型号</th><th>对应设计</th><th>翼为内部项目编号</th><th>客户名称</th>
+                                <th>项目开展日期</th><th>订单节点</th><th>报价单金额</th><th>合同金额</th><th>合同编号</th><th>交付时间</th>
+                                <th>开票情况</th><th>开票时间</th><th>开票金额</th><th>应回款时间</th><th>实际回款时间</th><th>回款金额</th><th>备注</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesLedgerBody"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex; justify-content:center; margin-top:20px;">
+                    <button class="add-btn" onclick="openSalesModal()"><i class="fas fa-plus"></i> 添加销售合同</button>
+                </div>
+            </div>
+            <div class="table-section">
+                <h2><i class="fas fa-shopping-cart"></i> 采购合同台账（简洁）</h2>
+                <button class="add-btn" onclick="addSimplePurchase()">添加采购合同</button>
+                <table class="data-table">
+                    <thead><tr><th>合同编号</th><th>合同名称</th><th>供应商</th><th>合同金额</th><th>已付金额</th><th>未付金额</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody id="purchaseLedgerBody"></tbody>
+                </table>
+            </div>
+            <div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+                <div style="background:white; max-width:900px; width:95%; max-height:85vh; overflow-y:auto; border-radius:32px; padding:24px;">
+                    <h3 id="modalTitle">添加销售合同</h3>
+                    <div id="modalForm"></div>
+                    <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;"><button class="btn-query" onclick="closeModal()">取消</button><button class="btn-query" id="modalSaveBtn">保存</button></div>
+                </div>
+            </div>
+            <script>
+                let currentEditNo = null;
+                function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+                function openSalesModal(contractNo) {
+                    contractNo = contractNo || null;
+                    let cons = JSON.parse(localStorage.getItem('contracts_data')||'[]');
+                    let extMap = JSON.parse(localStorage.getItem('sales_contract_ext')||'{}');
+                    let targetExt = contractNo ? (extMap[contractNo] || {}) : {};
+                    let targetContract = contractNo ? cons.find(c=>c.contractNo===contractNo && c.contractType==='sales') : null;
+                    let formHtml = '<div class="form-grid" style="grid-template-columns:1fr 1fr;">';
+                    const fields = [
+                        {label:'序号', name:'seq'},{label:'类型', name:'typeSub'},{label:'项目名称', name:'projectName'},{label:'订单编号', name:'orderNo'},
+                        {label:'规格型号', name:'specModel'},{label:'对应设计', name:'designer'},{label:'翼为内部项目编号', name:'internalProjectNo'},{label:'客户名称', name:'customerName'},
+                        {label:'项目开展日期', name:'projectStartDate', type:'date'},{label:'订单节点', name:'orderNode'},{label:'报价单金额', name:'quoteAmount', type:'number'},
+                        {label:'合同金额', name:'contractAmountVal', type:'number'},{label:'合同编号', name:'contractNoVal'},{label:'交付时间', name:'deliveryDate', type:'date'},
+                        {label:'开票情况', name:'invoiceStatus'},{label:'开票时间', name:'invoiceDate', type:'date'},{label:'开票金额', name:'invoiceAmount', type:'number'},
+                        {label:'应回款时间', name:'duePaymentDate', type:'date'},{label:'实际回款时间', name:'actualPaymentDate', type:'date'},{label:'回款金额', name:'receivedAmount', type:'number'},
+                        {label:'备注', name:'remarkExt', type:'textarea'}
+                    ];
+                    fields.forEach(f=>{
+                        let val = '';
+                        if(f.name === 'contractNoVal') val = contractNo || '';
+                        else if(f.name === 'contractAmountVal') val = targetContract ? targetContract.contractAmount : '';
+                        else if(f.name === 'customerName') val = targetContract ? targetContract.partyName : '';
+                        else val = targetExt[f.name] || '';
+                        if(f.type === 'textarea') formHtml += '<div class="form-item full-width"><label>' + f.label + '</label><textarea id="ext_' + f.name + '" rows="2">' + escapeHtmlExt(val) + '</textarea></div>';
+                        else formHtml += '<div class="form-item"><label>' + f.label + '</label><input type="' + (f.type||'text') + '" id="ext_' + f.name + '" value="' + escapeHtmlExt(val) + '"></div>';
+                    });
+                    formHtml += '</div>';
+                    document.getElementById('modalForm').innerHTML = formHtml;
+                    document.getElementById('modalTitle').innerText = contractNo ? '编辑销售合同' : '新增销售合同';
+                    currentEditNo = contractNo;
+                    document.getElementById('modalOverlay').style.display = 'flex';
+                    document.getElementById('modalSaveBtn').onclick = function() { saveSalesContract(); };
+                }
+                function escapeHtmlExt(str){ if(!str) return ''; return String(str).replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+                function saveSalesContract() {
+                    let cons = JSON.parse(localStorage.getItem('contracts_data')||'[]');
+                    let extMap = JSON.parse(localStorage.getItem('sales_contract_ext')||'{}');
+                    let contractNo = document.getElementById('ext_contractNoVal') ? document.getElementById('ext_contractNoVal').value.trim() : '';
+                    let customerName = document.getElementById('ext_customerName') ? document.getElementById('ext_customerName').value.trim() : '';
+                    let contractAmount = parseFloat(document.getElementById('ext_contractAmountVal') ? document.getElementById('ext_contractAmountVal').value : 0) || 0;
+                    if(!contractNo || !customerName || contractAmount<=0) { alert('请填写合同编号、客户名称及合同金额'); return; }
+                    let existContract = cons.find(c=>c.contractNo===contractNo);
+                    if(!currentEditNo && existContract) { alert('合同编号已存在'); return; }
+                    let extData = {};
+                    const keys = ['seq','typeSub','projectName','orderNo','specModel','designer','internalProjectNo','projectStartDate','orderNode','quoteAmount','deliveryDate','invoiceStatus','invoiceDate','invoiceAmount','duePaymentDate','actualPaymentDate','receivedAmount','remarkExt'];
+                    keys.forEach(function(k){ let el = document.getElementById('ext_' + k); if(el) extData[k] = el.value; });
+                    extData.quoteAmount = parseFloat(extData.quoteAmount) || 0;
+                    extData.invoiceAmount = parseFloat(extData.invoiceAmount) || 0;
+                    extData.receivedAmount = parseFloat(extData.receivedAmount) || 0;
+                    if(!currentEditNo) {
+                        let newContract = { contractNo:contractNo, contractName:extData.projectName || '销售合同', partyName:customerName, contractAmount:contractAmount, contractType:'sales', signDate:'', contractStatus:'进行中', responsiblePerson:'', remarks:extData.remarkExt||'', files:[], createdAt:new Date().toISOString() };
+                        cons.push(newContract);
+                        extMap[contractNo] = extData;
+                        let rec = JSON.parse(localStorage.getItem('receipts_data')||'[]');
+                        if(!rec.some(function(r){ return r.contractNo===contractNo; })) rec.push({date:new Date().toISOString().split('T')[0],contractNo:contractNo,customer:customerName,receiptAmount:extData.receivedAmount||0});
+                        localStorage.setItem('receipts_data',JSON.stringify(rec));
+                    } else {
+                        let idx = -1;
+                        for(let i=0;i<cons.length;i++){ if(cons[i].contractNo===currentEditNo){ idx=i; break; } }
+                        if(idx!==-1) { cons[idx].partyName = customerName; cons[idx].contractAmount = contractAmount; cons[idx].contractName = extData.projectName || cons[idx].contractName; cons[idx].remarks = extData.remarkExt; }
+                        extMap[currentEditNo] = extData;
+                        let recs = JSON.parse(localStorage.getItem('receipts_data')||'[]');
+                        let recIdx = -1;
+                        for(let i=0;i<recs.length;i++){ if(recs[i].contractNo===currentEditNo){ recIdx=i; break; } }
+                        if(recIdx!==-1) recs[recIdx].receiptAmount = extData.receivedAmount || 0;
+                        else recs.push({date:new Date().toISOString().split('T')[0],contractNo:currentEditNo,customer:customerName,receiptAmount:extData.receivedAmount||0});
+                        localStorage.setItem('receipts_data',JSON.stringify(recs));
+                    }
+                    localStorage.setItem('contracts_data',JSON.stringify(cons));
+                    localStorage.setItem('sales_contract_ext',JSON.stringify(extMap));
+                    showToastMsg('保存成功', true);
+                    closeModal();
+                    loadSalesLedger();
+                    loadPurchaseLedger();
+                }
+                function loadSalesLedger() {
+                    let cons = JSON.parse(localStorage.getItem('contracts_data')||'[]');
+                    let sales = [];
+                    for(let i=0;i<cons.length;i++){ if(cons[i].contractType==='sales') sales.push(cons[i]); }
+                    let extMap = JSON.parse(localStorage.getItem('sales_contract_ext')||'{}');
+                    let receipts = JSON.parse(localStorage.getItem('receipts_data')||'[]');
+                    let tbody = document.getElementById('salesLedgerBody');
+                    if(sales.length===0){ tbody.innerHTML='<tr><td colspan="22" style="text-align:center">暂无销售合同数据</td></tr>'; return; }
+                    let html = '';
+                    for(let i=0;i<sales.length;i++){
+                        let s = sales[i];
+                        let ext = extMap[s.contractNo] || {};
+                        let receivedTotal = 0;
+                        for(let j=0;j<receipts.length;j++){ if(receipts[j].contractNo===s.contractNo) receivedTotal += parseFloat(receipts[j].receiptAmount)||0; }
+                        html += '<tr>' +
+                            '<td>' + (ext.seq || '') + '</td>' +
+                            '<td>' + (ext.typeSub || '') + '</td>' +
+                            '<td>' + (ext.projectName || '') + '</td>' +
+                            '<td>' + (ext.orderNo || '') + '</td>' +
+                            '<td>' + (ext.specModel || '') + '</td>' +
+                            '<td>' + (ext.designer || '') + '</td>' +
+                            '<td>' + (ext.internalProjectNo || '') + '</td>' +
+                            '<td>' + s.partyName + '</td>' +
+                            '<td>' + (ext.projectStartDate || '') + '</td>' +
+                            '<td>' + (ext.orderNode || '') + '</td>' +
+                            '<td>' + (ext.quoteAmount || 0) + '</td>' +
+                            '<td>' + s.contractAmount + '</td>' +
+                            '<td>' + s.contractNo + '</td>' +
+                            '<td>' + (ext.deliveryDate || '') + '</td>' +
+                            '<td>' + (ext.invoiceStatus || '') + '</td>' +
+                            '<td>' + (ext.invoiceDate || '') + '</td>' +
+                            '<td>' + (ext.invoiceAmount || 0) + '</td>' +
+                            '<td>' + (ext.duePaymentDate || '') + '</td>' +
+                            '<td>' + (ext.actualPaymentDate || '') + '</td>' +
+                            '<td>' + receivedTotal + '</td>' +
+                            '<td>' + (ext.remarkExt || '') + '</td>' +
+                            '<td><button class="delete-btn" onclick="editSales(\'' + s.contractNo + '\')">编辑</button> <button class="delete-btn" style="background:#dc2626;" onclick="delSales(\'' + s.contractNo + '\')">删除</button></td>' +
+                            '</tr>';
+                    }
+                    tbody.innerHTML = html;
+                }
+                function loadPurchaseLedger() {
+                    let cons = JSON.parse(localStorage.getItem('contracts_data')||'[]');
+                    let purchase = [];
+                    for(let i=0;i<cons.length;i++){ if(cons[i].contractType==='purchase') purchase.push(cons[i]); }
+                    let payments = JSON.parse(localStorage.getItem('payments_data')||'[]');
+                    let tbody = document.getElementById('purchaseLedgerBody');
+                    if(purchase.length===0){ tbody.innerHTML='<tr><td colspan="8">暂无采购合同</td></tr>'; return; }
+                    let html = '';
+                    for(let i=0;i<purchase.length;i++){
+                        let p = purchase[i];
+                        let paid = 0;
+                        for(let j=0;j<payments.length;j++){ if(payments[j].contractNo===p.contractNo) paid += parseFloat(payments[j].paymentAmount)||0; }
+                        let unpaid = (p.contractAmount||0)-paid;
+                        html+='<tr><td>'+p.contractNo+'</td><td>'+p.contractName+'</td><td>'+p.partyName+'</td><td>'+p.contractAmount+'</td><td>'+paid+'</td><td>'+unpaid+'</td><td>'+p.contractStatus+'</td><td><button class="delete-btn" onclick="delPurchase(\''+p.contractNo+'\')">删除</button></td></tr>';
+                    }
+                    tbody.innerHTML = html;
+                }
+                window.editSales = function(no) { openSalesModal(no); };
+                window.delSales = function(no) { if(confirm('删除销售合同及关联数据？')){ let cons=JSON.parse(localStorage.getItem('contracts_data')||'[]'); let newCons=[]; for(let i=0;i<cons.length;i++){ if(cons[i].contractNo!==no) newCons.push(cons[i]); } localStorage.setItem('contracts_data',JSON.stringify(newCons)); let ext=JSON.parse(localStorage.getItem('sales_contract_ext')||'{}'); delete ext[no]; localStorage.setItem('sales_contract_ext',JSON.stringify(ext)); let rec=JSON.parse(localStorage.getItem('receipts_data')||'[]'); let newRec=[]; for(let i=0;i<rec.length;i++){ if(rec[i].contractNo!==no) newRec.push(rec[i]); } localStorage.setItem('receipts_data',JSON.stringify(newRec)); loadSalesLedger(); loadPurchaseLedger(); showToastMsg('已删除',true); } };
+                window.delPurchase = function(no) { if(confirm('删除采购合同')){ let cons=JSON.parse(localStorage.getItem('contracts_data')||'[]'); let newCons=[]; for(let i=0;i<cons.length;i++){ if(cons[i].contractNo!==no) newCons.push(cons[i]); } localStorage.setItem('contracts_data',JSON.stringify(newCons)); let pay=JSON.parse(localStorage.getItem('payments_data')||'[]'); let newPay=[]; for(let i=0;i<pay.length;i++){ if(pay[i].contractNo!==no) newPay.push(pay[i]); } localStorage.setItem('payments_data',JSON.stringify(newPay)); loadPurchaseLedger(); } };
+                window.addSimplePurchase = function() { let cons=JSON.parse(localStorage.getItem('contracts_data')||'[]'); let newNo='PUR-'+Date.now(); cons.push({contractNo:newNo,contractName:'新采购合同',partyName:'',contractAmount:0,contractType:'purchase',signDate:'',contractStatus:'草稿',responsiblePerson:'',remarks:'',files:[]}); localStorage.setItem('contracts_data',JSON.stringify(cons)); loadPurchaseLedger(); showToastMsg('已添加采购合同草稿',true); };
+                function showToastMsg(msg, ok){ let div=document.createElement('div'); div.className='toast-message'; div.innerText=msg; div.style.background=ok?'#1e3a6b':'#dc2626'; document.body.appendChild(div); setTimeout(function(){ if(div && div.remove) div.remove(); },2500); }
+                loadSalesLedger(); loadPurchaseLedger();
+            <\/script>
+        `;
+    }
+
+    // 其他模块保持不变
+    function generatePaymentManagementHTML() { return `<h3>收款记录</h3><table class="data-table"><thead> <th>日期</th><th>合同编号</th><th>客户</th><th>收款金额</th><th>操作</th> </thead><tbody id="receiptsBody"></tbody> <button class="btn-query" onclick="addReceiptRow()">添加收款</button><h3>付款记录</h3><table class="data-table"><thead> <th>日期</th><th>合同编号</th><th>供应商</th><th>付款金额</th><th>操作</th> </thead><tbody id="paymentsBody"></tbody> <button class="btn-query" onclick="addPaymentRow()">添加付款</button><script>function loadPM(){ var r=JSON.parse(localStorage.getItem('receipts_data')||'[]'); var p=JSON.parse(localStorage.getItem('payments_data')||'[]'); var rh=''; for(var i=0;i<r.length;i++){ rh+='<tr><td><input class="editable-input" value="'+r[i].date+'"></td><td><input class="editable-input" value="'+r[i].contractNo+'"></td><td><input class="editable-input" value="'+r[i].customer+'"></td><td><input class="editable-input" value="'+r[i].receiptAmount+'"></td><td><button class="delete-btn" onclick="delReceipt('+i+')">删</button></td></tr>'; } document.getElementById('receiptsBody').innerHTML=rh||'<tr><td colspan="5">暂无</td></tr>'; var ph=''; for(var i=0;i<p.length;i++){ ph+='<tr><td><input class="editable-input" value="'+p[i].date+'"></td><td><input class="editable-input" value="'+p[i].contractNo+'"></td><td><input class="editable-input" value="'+p[i].supplier+'"></td><td><input class="editable-input" value="'+p[i].paymentAmount+'"></td><td><button class="delete-btn" onclick="delPayment('+i+')">删</button></td></tr>'; } document.getElementById('paymentsBody').innerHTML=ph||'<tr><td colspan="5">暂无</td></tr>'; } window.delReceipt=function(i){var r=JSON.parse(localStorage.getItem('receipts_data')||'[]');r.splice(i,1);localStorage.setItem('receipts_data',JSON.stringify(r));loadPM();}; window.delPayment=function(i){var p=JSON.parse(localStorage.getItem('payments_data')||'[]');p.splice(i,1);localStorage.setItem('payments_data',JSON.stringify(p));loadPM();}; function addReceiptRow(){var r=JSON.parse(localStorage.getItem('receipts_data')||'[]');r.push({date:new Date().toISOString().split('T')[0],contractNo:'',customer:'',receiptAmount:0});localStorage.setItem('receipts_data',JSON.stringify(r));loadPM();} function addPaymentRow(){var p=JSON.parse(localStorage.getItem('payments_data')||'[]');p.push({date:new Date().toISOString().split('T')[0],contractNo:'',supplier:'',paymentAmount:0});localStorage.setItem('payments_data',JSON.stringify(p));loadPM();} loadPM();<\/script>`; }
+    function generateAccountsReceivableHTML() { return `<table class="data-table"><thead> <th>客户</th><th>合同编号</th><th>应收金额</th><th>已收金额</th><th>未收金额</th><th>操作</th> </thead><tbody id="receivableBody"></tbody> <script> function loadAR(){ var c=JSON.parse(localStorage.getItem('contracts_data')||'[]'); var sales=[]; for(var i=0;i<c.length;i++){ if(c[i].contractType==='sales') sales.push(c[i]); } var r=JSON.parse(localStorage.getItem('receipts_data')||'[]'); var html=''; for(var i=0;i<sales.length;i++){ var s=sales[i]; var rec=0; for(var j=0;j<r.length;j++){ if(r[j].contractNo===s.contractNo) rec+=parseFloat(r[j].receiptAmount)||0; } var unpaid=(s.contractAmount||0)-rec; html+='<tr><td>'+s.partyName+'</td><td>'+s.contractNo+'</td><td>'+s.contractAmount+'</td><td>'+rec+'</td><td>'+unpaid+'</td><td><button class="delete-btn" onclick="delCon(\''+s.contractNo+'\')">删合同</button></td></tr>'; } document.getElementById('receivableBody').innerHTML=html||'<tr><td colspan="6">暂无</td></tr>'; } window.delCon=function(no){ if(confirm('删除合同')){ var cs=JSON.parse(localStorage.getItem('contracts_data')||'[]'); var newCs=[]; for(var i=0;i<cs.length;i++){ if(cs[i].contractNo!==no) newCs.push(cs[i]); } localStorage.setItem('contracts_data',JSON.stringify(newCs)); var rs=JSON.parse(localStorage.getItem('receipts_data')||'[]'); var newRs=[]; for(var i=0;i<rs.length;i++){ if(rs[i].contractNo!==no) newRs.push(rs[i]); } localStorage.setItem('receipts_data',JSON.stringify(newRs)); loadAR(); } }; loadAR();<\/script>`; }
+    function generateAccountsPayableHTML() { return `<table class="data-table"><thead> <th>供应商</th><th>合同编号</th><th>应付金额</th><th>已付金额</th><th>未付金额</th><th>操作</th> </thead><tbody id="payableBody"></tbody> <script> function loadAP(){ var c=JSON.parse(localStorage.getItem('contracts_data')||'[]'); var purchase=[]; for(var i=0;i<c.length;i++){ if(c[i].contractType==='purchase') purchase.push(c[i]); } var p=JSON.parse(localStorage.getItem('payments_data')||'[]'); var html=''; for(var i=0;i<purchase.length;i++){ var s=purchase[i]; var paid=0; for(var j=0;j<p.length;j++){ if(p[j].contractNo===s.contractNo) paid+=parseFloat(p[j].paymentAmount)||0; } var unpaid=(s.contractAmount||0)-paid; html+='<tr><td>'+s.partyName+'</td><td>'+s.contractNo+'</td><td>'+s.contractAmount+'</td><td>'+paid+'</td><td>'+unpaid+'</td><td><button class="delete-btn" onclick="delPur(\''+s.contractNo+'\')">删合同</button></td></tr>'; } document.getElementById('payableBody').innerHTML=html||'<tr><td colspan="6">暂无</td></tr>'; } window.delPur=function(no){ if(confirm('删除合同')){ var cs=JSON.parse(localStorage.getItem('contracts_data')||'[]'); var newCs=[]; for(var i=0;i<cs.length;i++){ if(cs[i].contractNo!==no) newCs.push(cs[i]); } localStorage.setItem('contracts_data',JSON.stringify(newCs)); var ps=JSON.parse(localStorage.getItem('payments_data')||'[]'); var newPs=[]; for(var i=0;i<ps.length;i++){ if(ps[i].contractNo!==no) newPs.push(ps[i]); } localStorage.setItem('payments_data',JSON.stringify(newPs)); loadAP(); } }; loadAP();<\/script>`; }
+    function generateLedgerQueryHTML() { return `<div class="query-panel"><div class="query-item"><label>合同编号</label><input id="qNo" class="editable-input"></div><div class="query-item"><label>客户/供应商</label><input id="qParty" class="editable-input"></div><div class="query-item"><label>状态</label><select id="qStatus"><option value="">全部</option><option>进行中</option><option>已归档</option></select></div><button class="btn-query" onclick="search()">查询</button></div><table class="data-table"><thead> <th>编号</th><th>名称</th><th>客户/供应商</th><th>类型</th><th>金额</th><th>状态</th> </thead><tbody id="result"></tbody> <script>function search(){ var cons=JSON.parse(localStorage.getItem('contracts_data')||'[]'); var no=document.getElementById('qNo').value; var party=document.getElementById('qParty').value; var sta=document.getElementById('qStatus').value; var filtered=[]; for(var i=0;i<cons.length;i++){ var c=cons[i]; if((!no||c.contractNo.includes(no))&&(!party||c.partyName.includes(party))&&(!sta||c.contractStatus===sta)) filtered.push(c); } var tb=document.getElementById('result'); if(filtered.length){ var h=''; for(var i=0;i<filtered.length;i++){ var c=filtered[i]; h+='<tr><td>'+c.contractNo+'</td><td>'+c.contractName+'</td><td>'+c.partyName+'</td><td>'+(c.contractType==='purchase'?'采购':'销售')+'</td><td>'+c.contractAmount+'</td><td>'+c.contractStatus+'</td></tr>'; } tb.innerHTML=h; } else tb.innerHTML='<tr><td colspan="6">无匹配</td></tr>'; }<\/script>`; }
+    function generateAnalyticsBoardHTML() { return `<div class="stats-row"><div class="stat-card"><i class="fas fa-file-contract"></i><h3>执行中合同</h3><p id="inProgressCount">0</p></div><div class="stat-card"><i class="fas fa-chart-line"></i><h3>总合同数</h3><p id="totalCount">0</p></div></div><script>var cs=JSON.parse(localStorage.getItem('contracts_data')||'[]'); var inProgress=0; for(var i=0;i<cs.length;i++){ if(cs[i].contractStatus==='进行中') inProgress++; } document.getElementById('inProgressCount').innerText=inProgress; document.getElementById('totalCount').innerText=cs.length;<\/script>`; }
+    function generateDataExportHTML() { var currentYear=new Date().getFullYear(); var yearsHtml=''; for(var y=currentYear-2;y<=currentYear+2;y++) yearsHtml+='<option value="'+y+'" '+(y===currentYear?'selected':'')+'>'+y+'年</option>'; var monthsHtml=''; for(var m=1;m<=12;m++) monthsHtml+='<option value="'+(m<10?'0'+m:m)+'">'+m+'月</option>'; return `<div style="text-align:center"><i class="fas fa-file-excel" style="font-size:3rem;color:#1e3a6b"></i><h2>数据导出</h2><div class="export-filter"><div class="filter-item"><label>年份</label><select id="exportYear">${yearsHtml}</select></div><div class="filter-item"><label>月份</label><select id="exportMonth">${monthsHtml}</select></div><div class="filter-item"><label>类型</label><select id="exportType"><option value="all">全部</option><option value="sales">销售</option><option value="purchase">采购</option></select></div><button class="btn-query" onclick="exportByMonth()">按月导出</button></div><div><button class="btn-query" onclick="exportAllData()">导出全部合同</button></div></div><script>function escapeCsv(v){if(v==null)return '';v=String(v);if(v.includes('"'))v=v.replace(/"/g,'""');if(v.includes(',')||v.includes('\\n')) return '"'+v+'"'; return v;} function toCsv(data,name){if(!data.length){alert('无数据');return;} var heads=Object.keys(data[0]); var rows=[heads.map(escapeCsv).join(',')]; for(var i=0;i<data.length;i++){ var row=[]; for(var j=0;j<heads.length;j++){ row.push(escapeCsv(data[i][heads[j]])); } rows.push(row.join(',')); } var blob=new Blob(["\\uFEFF"+rows.join('\\n')],{type:'text/csv'}); var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'.csv';a.click();URL.revokeObjectURL(a.href);} function exportByMonth(){var y=document.getElementById('exportYear').value,m=document.getElementById('exportMonth').value,type=document.getElementById('exportType').value;var cons=JSON.parse(localStorage.getItem('contracts_data')||'[]');var filtered=[]; for(var i=0;i<cons.length;i++){ if(cons[i].signDate&&cons[i].signDate.startsWith(y+'-'+m)) filtered.push(cons[i]); } if(type!=='all'){ var temp=[]; for(var i=0;i<filtered.length;i++){ if(filtered[i].contractType===type) temp.push(filtered[i]); } filtered=temp; } if(!filtered.length){alert('无合同');return;} var recs=JSON.parse(localStorage.getItem('receipts_data')||'[]'),pays=JSON.parse(localStorage.getItem('payments_data')||'[]'); var out=[]; for(var i=0;i<filtered.length;i++){ var c=filtered[i]; var recv=0; for(var j=0;j<recs.length;j++){ if(recs[j].contractNo===c.contractNo) recv+=parseFloat(recs[j].receiptAmount)||0; } var paid=0; for(var j=0;j<pays.length;j++){ if(pays[j].contractNo===c.contractNo) paid+=parseFloat(pays[j].paymentAmount)||0; } out.push({'合同编号':c.contractNo,'合同名称':c.contractName,'客户/供应商':c.partyName,'合同金额':c.contractAmount,'类型':c.contractType==='purchase'?'采购':'销售','签订日期':c.signDate,'已收':recv,'已付':paid}); } toCsv(out,'合同导出_'+y+'-'+m);} function exportAllData(){var cons=JSON.parse(localStorage.getItem('contracts_data')||'[]');var recs=JSON.parse(localStorage.getItem('receipts_data')||'[]'),pays=JSON.parse(localStorage.getItem('payments_data')||'[]');var out=[]; for(var i=0;i<cons.length;i++){ var c=cons[i]; var recv=0; for(var j=0;j<recs.length;j++){ if(recs[j].contractNo===c.contractNo) recv+=parseFloat(recs[j].receiptAmount)||0; } var paid=0; for(var j=0;j<pays.length;j++){ if(pays[j].contractNo===c.contractNo) paid+=parseFloat(pays[j].paymentAmount)||0; } out.push({'合同编号':c.contractNo,'合同名称':c.contractName,'客户/供应商':c.partyName,'合同金额':c.contractAmount,'类型':c.contractType==='purchase'?'采购':'销售','状态':c.contractStatus,'已收金额':recv,'已付金额':paid}); } toCsv(out,'全部合同'); }<\/script>`; }
+</script>
+</body>
+</html>

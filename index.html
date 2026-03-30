@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>合同管理系统 - 专业销售/采购双轨管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef2f7 0%, #dce5ef 100%);
+            min-height: 100vh;
+            padding: 30px 28px 50px 28px;
+        }
+
+        .system-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .master-header {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+        .master-header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0b2b3b, #1e5a7a, #2c7da0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .master-header p {
+            color: #2c6079;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+            margin-bottom: 30px;
+        }
+
+        .module-card {
+            background: rgba(255,255,255,0.96);
+            border-radius: 36px;
+            box-shadow: 0 20px 32px -12px rgba(0,0,0,0.12);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: 1px solid rgba(255,255,255,0.6);
+            overflow: hidden;
+        }
+        .module-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 40px -16px rgba(0,0,0,0.25);
+            background: white;
+        }
+        .card-header {
+            padding: 20px 22px 12px 22px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+        }
+        .card-icon {
+            width: 54px;
+            height: 54px;
+            background: #eef3fc;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        .card-header h2 {
+            font-size: 1.55rem;
+            font-weight: 650;
+            color: #1c4e6e;
+        }
+        .card-preview {
+            padding: 16px 22px 22px 22px;
+            font-size: 0.85rem;
+            color: #4f6f8f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .enter-badge {
+            background: #e9eff5;
+            border-radius: 60px;
+            padding: 6px 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1f6392;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.2s;
+        }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-container {
+            background: #ffffff;
+            width: 90%;
+            max-width: 1400px;
+            max-height: 85vh;
+            border-radius: 44px;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 20px 28px;
+            background: #f8fafd;
+            border-bottom: 1px solid #e2edf7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #1f4e6e;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #7f9cbb;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+        }
+        .modal-body {
+            padding: 24px 28px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-footer {
+            padding: 16px 28px;
+            background: #f9fbfd;
+            border-top: 1px solid #e9f0f5;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        button {
+            border: none;
+            background: #2c6e9e;
+            color: white;
+            padding: 8px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button.secondary {
+            background: #e2eaf1;
+            color: #2c5c7c;
+        }
+        button.draft-btn {
+            background: #f0ad4e;
+            color: white;
+        }
+        button.edit-save-btn {
+            background: #28a745;
+            padding: 6px 12px;
+            font-size: 0.7rem;
+        }
+        .form-row {
+            margin-bottom: 14px;
+        }
+        .form-row label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: #1f4662;
+        }
+        .form-row input, .form-row select, .form-row textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 24px;
+            border: 1.5px solid #d4e0ea;
+            font-size: 0.9rem;
+            background: #fff;
+        }
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        .compact-table th, .compact-table td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #e2edf4;
+            text-align: left;
+        }
+        .compact-table th {
+            background: #f0f6fc;
+            position: sticky;
+            top: 0;
+        }
+        .compact-table input {
+            width: 110px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.7rem;
+        }
+        .compact-table input[type="date"] {
+            width: 120px;
+        }
+        .scroll-area {
+            max-height: 450px;
+            overflow-y: auto;
+            margin-top: 12px;
+            border: 1px solid #e9edf2;
+            border-radius: 20px;
+        }
+        .stat-badge {
+            background: #ecf5fb;
+            border-radius: 28px;
+            padding: 10px 12px;
+            margin-top: 16px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .tab-buttons, .sub-tab {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2edf4;
+            padding-bottom: 8px;
+        }
+        .tab-btn, .sub-tab-btn {
+            background: transparent;
+            color: #4f6f8f;
+            padding: 8px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .tab-btn.active, .sub-tab-btn.active {
+            background: #2c6e9e;
+            color: white;
+        }
+        .tab-pane, .ledger-pane, .payment-pane {
+            display: none;
+        }
+        .tab-pane.active-pane, .ledger-pane.active-pane, .payment-pane.active-pane {
+            display: block;
+        }
+        .action-icon {
+            background: #f0f2f5;
+            color: #c76e6e;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            width: auto;
+            cursor: pointer;
+            border-radius: 20px;
+            border: none;
+        }
+        .draft-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            justify-content: flex-end;
+        }
+        .overdue-badge {
+            color: #d9534f;
+            font-weight: bold;
+        }
+        .editable-input {
+            background-color: #fff9e6;
+            border: 1px solid #ffc107;
+        }
+        .save-btn-small {
+            background: #28a745;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            border-radius: 20px;
+            cursor: pointer;
+            color: white;
+            border: none;
+        }
+        .search-box {
+            background: white;
+            padding: 16px;
+            border-radius: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .search-box input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #d0dde8;
+            border-radius: 32px;
+            font-size: 0.9rem;
+        }
+        .search-box button {
+            background: #2c6e9e;
+            padding: 10px 28px;
+            margin-left: 12px;
+        }
+        .result-header {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f4662;
+            margin: 16px 0 8px 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: #6c8db0;
+            margin-bottom: 8px;
+        }
+        .stat-card .value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1f4e6e;
+        }
+        .stat-card .sub {
+            font-size: 0.7rem;
+            color: #8aa9c4;
+            margin-top: 4px;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1f4e6e;
+            margin: 20px 0 12px 0;
+            border-left: 4px solid #2c6e9e;
+            padding-left: 12px;
+        }
+        .export-panel {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .date-range {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .date-range label {
+            font-weight: 600;
+            color: #1f4662;
+        }
+        .date-range input {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+        }
+        @media (max-width: 860px) {
+            .modules-grid { grid-template-columns: 1fr; }
+            .form-grid-2 { grid-template-columns: 1fr; }
+            .compact-table { font-size: 0.65rem; }
+            .compact-table input { width: 85px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .date-range { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+<div class="system-container">
+    <div class="master-header">
+        <h1>📄 合同管理系统</h1>
+        <p>父级管控中心 · 销售/采购双轨管理 · 应收应付完整账期管理</p>
+    </div>
+    <div class="modules-grid" id="modulesGrid"></div>
+</div>
+
+<div id="moduleModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 id="modalTitle">📌 模块名称</h3>
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer">
+            <button class="secondary" id="modalCloseFooter">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ======================= 持久化存储键名 ========================
+    const STORAGE_KEYS = {
+        SALE_CONTRACTS: 'saleContracts',
+        PURCHASE_CONTRACTS: 'purchaseContracts',
+        RECEIPT_RECORDS: 'receiptRecords',
+        PAYMENT_RECORDS: 'paymentRecords',
+        SUPPLIERS: 'suppliers',
+        ATTACHMENTS: 'attachments'
+    };
+
+    // ======================= 数据结构 ========================
+    let attachments = {};
+
+    // 销售合同数据
+    let saleContracts = [];
+
+    // 采购合同数据
+    let purchaseContracts = [];
+
+    // 收款记录
+    let receiptRecords = [];
+
+    // 付款记录
+    let paymentRecords = [];
+
+    // 供应商数据
+    let suppliers = [];
+
+    // 从 localStorage 加载数据
+    function loadDataFromStorage() {
+        try {
+            const savedSale = localStorage.getItem(STORAGE_KEYS.SALE_CONTRACTS);
+            if (savedSale) saleContracts = JSON.parse(savedSale);
+            const savedPurchase = localStorage.getItem(STORAGE_KEYS.PURCHASE_CONTRACTS);
+            if (savedPurchase) purchaseContracts = JSON.parse(savedPurchase);
+            const savedReceipt = localStorage.getItem(STORAGE_KEYS.RECEIPT_RECORDS);
+            if (savedReceipt) receiptRecords = JSON.parse(savedReceipt);
+            const savedPayment = localStorage.getItem(STORAGE_KEYS.PAYMENT_RECORDS);
+            if (savedPayment) paymentRecords = JSON.parse(savedPayment);
+            const savedSuppliers = localStorage.getItem(STORAGE_KEYS.SUPPLIERS);
+            if (savedSuppliers) suppliers = JSON.parse(savedSuppliers);
+            const savedAttachments = localStorage.getItem(STORAGE_KEYS.ATTACHMENTS);
+            if (savedAttachments) attachments = JSON.parse(savedAttachments);
+        } catch (e) {
+            console.error('加载数据失败', e);
+        }
+    }
+
+    // 保存所有数据到 localStorage
+    function saveAllDataToStorage() {
+        try {
+            localStorage.setItem(STORAGE_KEYS.SALE_CONTRACTS, JSON.stringify(saleContracts));
+            localStorage.setItem(STORAGE_KEYS.PURCHASE_CONTRACTS, JSON.stringify(purchaseContracts));
+            localStorage.setItem(STORAGE_KEYS.RECEIPT_RECORDS, JSON.stringify(receiptRecords));
+            localStorage.setItem(STORAGE_KEYS.PAYMENT_RECORDS, JSON.stringify(paymentRecords));
+            localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(suppliers));
+            localStorage.setItem(STORAGE_KEYS.ATTACHMENTS, JSON.stringify(attachments));
+        } catch (e) {
+            console.error('保存数据失败', e);
+        }
+    }
+
+    // 在每次数据修改后调用此函数
+    function persistData() {
+        saveAllDataToStorage();
+    }
+
+    // 包装数组操作，自动持久化（可选，但为了不侵入代码，我们在所有修改数据的地方手动调用 persistData）
+    // 为了简单，我们在每个数据变更后调用 persistData()
+
+    // ======================= 工具函数 ========================
+    function updateSaleSeq() { saleContracts.forEach((item, idx) => { item.seq = idx + 1; }); }
+    function updatePurchaseSeq() { purchaseContracts.forEach((item, idx) => { item.seq = idx + 1; }); }
+
+    // 计算逾期天数
+    function calcOverdueDays(dueDate) {
+        if (!dueDate) return 0;
+        const today = new Date();
+        const due = new Date(dueDate);
+        if (due >= today) return 0;
+        const diffTime = today - due;
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    // 获取合同已收金额
+    function getReceivedAmount(contractId) {
+        return receiptRecords.filter(r => r.contractId === contractId).reduce((sum, r) => sum + r.amount, 0);
+    }
+
+    // 获取合同已付金额
+    function getPaidAmount(contractId) {
+        return paymentRecords.filter(p => p.contractId === contractId).reduce((sum, p) => sum + p.amount, 0);
+    }
+
+    let currentActiveModule = null;
+
+    function renderMainGrid() {
+        const grid = document.getElementById('modulesGrid');
+        const modules = [
+            { key: 'contractEntry', title: '📝 合同录入', desc: '销售/采购合同 + 草稿缓存', icon: '📄' },
+            { key: 'contractLedger', title: '📋 合同台账', desc: '销售合同台账 / 采购合同台账', icon: '📚' },
+            { key: 'supplierMgmt', title: '🏢 供应商管理', desc: '供应商档案管理', icon: '🤝' },
+            { key: 'paymentReceipt', title: '💸 收付款管理', desc: '收款记录 / 付款记录', icon: '💰' },
+            { key: 'receivable', title: '💰 应收账款', desc: '客户应收账期管理 · 可编辑已收金额/账期', icon: '📈' },
+            { key: 'payable', title: '📉 应付账款', desc: '供应商应付账期管理 · 可编辑已付金额/账期', icon: '📉' },
+            { key: 'ledgerQuery', title: '🔍 台账查询', desc: '关键字搜索合同/流水', icon: '🔎' },
+            { key: 'analysisData', title: '📊 分析数据', desc: '销售/采购总数据流', icon: '📊' },
+            { key: 'dataExport', title: '📎 数据导出', desc: '按年月日导出CSV', icon: '💾' }
+        ];
+        grid.innerHTML = '';
+        modules.forEach(mod => {
+            const card = document.createElement('div');
+            card.className = 'module-card';
+            card.innerHTML = `
+                <div class="card-header"><div class="card-icon">${mod.icon}</div><h2>${mod.title}</h2></div>
+                <div class="card-preview"><span>${mod.desc}</span><span class="enter-badge">点击进入 ➤</span></div>
+            `;
+            card.addEventListener('click', () => openModuleModal(mod.key, mod.title));
+            grid.appendChild(card);
+        });
+    }
+
+    function openModuleModal(moduleKey, title) {
+        currentActiveModule = moduleKey;
+        const modal = document.getElementById('moduleModal');
+        document.getElementById('modalTitle').innerHTML = `📌 ${title}  ·  内部编辑`;
+        const modalBody = document.getElementById('modalBody');
+        let renderContent = '';
+        switch (moduleKey) {
+            case 'contractEntry': renderContent = renderContractEntryWithTabs(); break;
+            case 'contractLedger': renderContent = renderContractLedgerWithTabs(); break;
+            case 'supplierMgmt': renderContent = renderSupplierManagement(); break;
+            case 'paymentReceipt': renderContent = renderPaymentReceiptWithTabs(); break;
+            case 'receivable': renderContent = renderReceivableModuleEditable(); break;
+            case 'payable': renderContent = renderPayableModuleEditable(); break;
+            case 'ledgerQuery': renderContent = renderLedgerQueryModule(); break;
+            case 'analysisData': renderContent = renderAnalysisModule(); break;
+            case 'dataExport': renderContent = renderDataExportModule(); break;
+        }
+        modalBody.innerHTML = renderContent;
+        modal.classList.add('active');
+        attachModuleEvents(moduleKey);
+    }
+
+    // ========= 应收账款模块（支持编辑已收金额和账期）==========
+    function renderReceivableModuleEditable() {
+        if (saleContracts.length === 0) return '<div class="stat-badge">暂无销售合同数据</div>';
+        
+        let html = `<div class="scroll-area"><table class="compact-table"><thead>`
+            + `   <th>合同名称</th><th>客户名称</th><th>合同编号</th><th>应收金额(¥)</th><th>已收金额(¥)</th><th>未收金额(¥)</th><th>账期</th><th>逾期天数</th><th>操作</th>`
+            + `</thead><tbody>`;
+        
+        saleContracts.forEach(c => {
+            const received = getReceivedAmount(c.id);
+            const unReceived = c.contractAmount - received;
+            const overdueDays = calcOverdueDays(c.dueReceiveTime);
+            const overdueClass = overdueDays > 0 ? 'overdue-badge' : '';
+            
+            html += `<tr data-contract-id="${c.id}" data-original-received="${received}">
+                <td style="text-align:center">${c.projectName || '-'}<\/td>
+                <td style="text-align:center">${c.customerName || '-'}<\/td>
+                <td style="text-align:center">${c.id}<\/td>
+                <td style="text-align:right">${c.contractAmount.toLocaleString()}<\/td>
+                <td style="text-align:center"><input type="number" class="edit-received-input" value="${received}" step="0.01" style="width:110px; background:#fff9e6;" placeholder="已收金额"><\/td>
+                <td style="text-align:right" class="${unReceived > 0 ? 'overdue-badge' : ''}">${unReceived.toLocaleString()}<\/td>
+                <td style="text-align:center"><input type="date" class="edit-due-date-input" value="${c.dueReceiveTime || ''}" style="width:120px; background:#fff9e6;"><\/td>
+                <td style="text-align:center" class="${overdueClass}">${overdueDays > 0 ? overdueDays + '天' : '-'}<\/td>
+                <td style="text-align:center"><button class="save-receivable-edit-btn" data-id="${c.id}" style="background:#28a745; padding:5px 14px; font-size:0.7rem; border-radius:20px;">💾 保存修改</button><\/td>
+              <\/tr>`;
+        });
+        
+        const totalReceivable = saleContracts.reduce((sum, c) => sum + (c.contractAmount - getReceivedAmount(c.id)), 0);
+        html += `</tbody><\/table><\/div>`;
+        return html;
+    }
+
+    // 保存应收账款编辑（更新已收金额和账期）
+    function saveReceivableEdit(contractId) {
+        const row = document.querySelector(`tr[data-contract-id="${contractId}"]`);
+        if (!row) return;
+        
+        const newReceivedInput = row.querySelector('.edit-received-input');
+        const newDueDateInput = row.querySelector('.edit-due-date-input');
+        if (!newReceivedInput || !newDueDateInput) return;
+        
+        const newReceived = parseFloat(newReceivedInput.value);
+        const newDueDate = newDueDateInput.value;
+        
+        if (isNaN(newReceived)) {
+            alert('请输入有效的已收金额');
+            return;
+        }
+        
+        const contract = saleContracts.find(c => c.id === contractId);
+        if (!contract) return;
+        
+        // 获取当前已收金额
+        const currentReceived = getReceivedAmount(contractId);
+        const diff = newReceived - currentReceived;
+        
+        // 更新账期（应回款时间）
+        let dueDateChanged = false;
+        if (newDueDate !== contract.dueReceiveTime) {
+            contract.dueReceiveTime = newDueDate;
+            dueDateChanged = true;
+        }
+        
+        // 处理已收金额变动：生成收款记录
+        if (Math.abs(diff) > 0.01) {
+            const now = new Date().toISOString().slice(0, 10);
+            const newRecord = {
+                id: `R_EDIT_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                date: now,
+                contractId: contractId,
+                contractName: contract.projectName,
+                customerName: contract.customerName,
+                paymentMethod: "手动调整",
+                amount: diff,
+                handler: "系统调整",
+                isInvoiced: diff > 0 ? "已开票" : "冲销",
+                invoiceDate: diff > 0 ? now : "",
+                remark: `应收账款手动调整，变动金额: ${diff > 0 ? '+' : ''}${diff.toFixed(2)}元`
+            };
+            receiptRecords.push(newRecord);
+            persistData();
+            alert(`已收金额已更新，变动金额: ${diff > 0 ? '+' : ''}${diff.toFixed(2)}元，已生成调整记录`);
+        } else if (dueDateChanged) {
+            persistData();
+            alert(`账期已更新为: ${newDueDate || '未设置'}`);
+        } else {
+            alert('未检测到任何修改');
+            return;
+        }
+        
+        // 刷新当前模块以显示最新数据
+        refreshCurrentModule('receivable');
+    }
+
+    // ========= 应付账款模块（支持编辑已付金额和账期）==========
+    function renderPayableModuleEditable() {
+        if (purchaseContracts.length === 0) return '<div class="stat-badge">暂无采购合同数据</div>';
+        
+        let html = `<div class="scroll-area"><table class="compact-table"><thead>`
+            + `   <th>合同名称</th><th>供应商</th><th>合同编号</th><th>应付金额(¥)</th><th>已付金额(¥)</th><th>未付金额(¥)</th><th>账期</th><th>逾期天数</th><th>操作</th>`
+            + `</thead><tbody>`;
+        
+        purchaseContracts.forEach(c => {
+            const paid = getPaidAmount(c.id);
+            const unPaid = c.totalAmount - paid;
+            const overdueDays = calcOverdueDays(c.duePayTime);
+            const overdueClass = overdueDays > 0 ? 'overdue-badge' : '';
+            
+            html += `<tr data-contract-id="${c.id}" data-original-paid="${paid}">
+                <td style="text-align:center">${c.product || '-'}<\/td>
+                <td style="text-align:center">${c.manufacturer || '-'}<\/td>
+                <td style="text-align:center">${c.id}<\/td>
+                <td style="text-align:right">${c.totalAmount.toLocaleString()}<\/td>
+                <td style="text-align:center"><input type="number" class="edit-paid-input" value="${paid}" step="0.01" style="width:110px; background:#fff9e6;" placeholder="已付金额"><\/td>
+                <td style="text-align:right" class="${unPaid > 0 ? 'overdue-badge' : ''}">${unPaid.toLocaleString()}<\/td>
+                <td style="text-align:center"><input type="date" class="edit-duepay-input" value="${c.duePayTime || ''}" style="width:120px; background:#fff9e6;"><\/td>
+                <td style="text-align:center" class="${overdueClass}">${overdueDays > 0 ? overdueDays + '天' : '-'}<\/td>
+                <td style="text-align:center"><button class="save-payable-edit-btn" data-id="${c.id}" style="background:#28a745; padding:5px 14px; font-size:0.7rem; border-radius:20px;">💾 保存修改</button><\/td>
+              <\/tr>`;
+        });
+        
+        const totalPayable = purchaseContracts.reduce((sum, c) => sum + (c.totalAmount - getPaidAmount(c.id)), 0);
+        html += `</tbody><\/table><\/div>`;
+        return html;
+    }
+
+    // 保存应付账款编辑（更新已付金额和账期）
+    function savePayableEdit(contractId) {
+        const row = document.querySelector(`tr[data-contract-id="${contractId}"]`);
+        if (!row) return;
+        
+        const newPaidInput = row.querySelector('.edit-paid-input');
+        const newDueDateInput = row.querySelector('.edit-duepay-input');
+        if (!newPaidInput || !newDueDateInput) return;
+        
+        const newPaid = parseFloat(newPaidInput.value);
+        const newDueDate = newDueDateInput.value;
+        
+        if (isNaN(newPaid)) {
+            alert('请输入有效的已付金额');
+            return;
+        }
+        
+        const contract = purchaseContracts.find(c => c.id === contractId);
+        if (!contract) return;
+        
+        // 获取当前已付金额
+        const currentPaid = getPaidAmount(contractId);
+        const diff = newPaid - currentPaid;
+        
+        // 更新账期（应付截止时间）
+        let dueDateChanged = false;
+        if (newDueDate !== contract.duePayTime) {
+            contract.duePayTime = newDueDate;
+            dueDateChanged = true;
+        }
+        
+        // 处理已付金额变动：生成付款记录
+        if (Math.abs(diff) > 0.01) {
+            const now = new Date().toISOString().slice(0, 10);
+            const newRecord = {
+                id: `P_EDIT_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                date: now,
+                contractId: contractId,
+                contractName: contract.product,
+                supplier: contract.manufacturer,
+                paymentMethod: "手动调整",
+                amount: diff,
+                handler: "系统调整",
+                isInvoiced: diff > 0 ? "已开票" : "冲销",
+                invoiceDate: diff > 0 ? now : "",
+                remark: `应付账款手动调整，变动金额: ${diff > 0 ? '+' : ''}${diff.toFixed(2)}元`
+            };
+            paymentRecords.push(newRecord);
+            persistData();
+            alert(`已付金额已更新，变动金额: ${diff > 0 ? '+' : ''}${diff.toFixed(2)}元，已生成调整记录`);
+        } else if (dueDateChanged) {
+            persistData();
+            alert(`账期已更新为: ${newDueDate || '未设置'}`);
+        } else {
+            alert('未检测到任何修改');
+            return;
+        }
+        
+        // 刷新当前模块以显示最新数据
+        refreshCurrentModule('payable');
+    }
+
+    // ========= 台账查询模块（关键字搜索）==========
+    function renderLedgerQueryModule() {
+        return `
+            <div class="search-box" style="display: flex; gap: 12px; align-items: center;">
+                <input type="text" id="queryKeyword" placeholder="输入关键字" style="flex:1;">
+                <button id="searchBtn">🔍 搜索</button>
+            </div>
+            <div id="searchResults" class="scroll-area" style="max-height: 500px;">
+                <div class="stat-badge">暂无结果</div>
+            </div>
+        `;
+    }
+
+    // 执行搜索并渲染结果
+    function performSearch(keyword) {
+        if (!keyword || keyword.trim() === '') {
+            document.getElementById('searchResults').innerHTML = '<div class="stat-badge">暂无结果</div>';
+            return;
+        }
+        keyword = keyword.trim().toLowerCase();
+        
+        function matches(obj, fields) {
+            for (let field of fields) {
+                let val = obj[field];
+                if (val && String(val).toLowerCase().includes(keyword)) return true;
+            }
+            return false;
+        }
+        
+        const saleMatches = saleContracts.filter(c => matches(c, ['id', 'contractNo', 'projectName', 'customerName', 'contractType', 'remark']));
+        const purchaseMatches = purchaseContracts.filter(c => matches(c, ['id', 'contractNo', 'product', 'manufacturer', 'projectName', 'remark']));
+        const receiptMatches = receiptRecords.filter(r => matches(r, ['id', 'contractId', 'contractName', 'customerName', 'remark']));
+        const paymentMatches = paymentRecords.filter(p => matches(p, ['id', 'contractId', 'contractName', 'supplier', 'remark']));
+        
+        let html = '';
+        
+        if (saleMatches.length > 0) {
+            html += `<div class="result-header">📋 销售合同 (${saleMatches.length})</div>`;
+            html += `<table class="compact-table" style="margin-bottom: 16px;"><thead><th>合同编号</th><th>项目名称</th><th>客户名称</th><th>合同金额(¥)</th><th>应回款时间</th><th>备注</th></thead><tbody>`;
+            saleMatches.forEach(c => {
+                html += `发展
+                    <td style="text-align:center">${c.id}<\/td>
+                    <td style="text-align:center">${c.projectName || '-'}<\/td>
+                    <td style="text-align:center">${c.customerName || '-'}<\/td>
+                    <td style="text-align:right">${c.contractAmount.toLocaleString()}<\/td>
+                    <td style="text-align:center">${c.dueReceiveTime || '-'}<\/td>
+                    <td style="text-align:center">${c.remark || '-'}<\/td>
+                <\/tr>`;
+            });
+            html += `</tbody><\/table>`;
+        }
+        
+        if (purchaseMatches.length > 0) {
+            html += `<div class="result-header">📦 采购合同 (${purchaseMatches.length})</div>`;
+            html += `<table class="compact-table" style="margin-bottom: 16px;"><thead><th>合同号</th><th>采购产品</th><th>供应商</th><th>总价(¥)</th><th>应付账期</th><th>备注</th></thead><tbody>`;
+            purchaseMatches.forEach(c => {
+                html += `发展
+                    <td style="text-align:center">${c.contractNo || c.id}<\/td>
+                    <td style="text-align:center">${c.product || '-'}<\/td>
+                    <td style="text-align:center">${c.manufacturer || '-'}<\/td>
+                    <td style="text-align:right">${c.totalAmount.toLocaleString()}<\/td>
+                    <td style="text-align:center">${c.duePayTime || '-'}<\/td>
+                    <td style="text-align:center">${c.remark || '-'}<\/td>
+                <\/tr>`;
+            });
+            html += `</tbody><\/table>`;
+        }
+        
+        if (receiptMatches.length > 0) {
+            html += `<div class="result-header">💰 收款记录 (${receiptMatches.length})</div>`;
+            html += `<table class="compact-table" style="margin-bottom: 16px;"><thead><th>日期</th><th>合同编号</th><th>合同名称</th><th>客户名称</th><th>金额(¥)</th><th>备注</th></thead><tbody>`;
+            receiptMatches.forEach(r => {
+                html += `发展
+                    <td style="text-align:center">${r.date}<\/td>
+                    <td style="text-align:center">${r.contractId}<\/td>
+                    <td style="text-align:center">${r.contractName}<\/td>
+                    <td style="text-align:center">${r.customerName}<\/td>
+                    <td style="text-align:right">${r.amount.toLocaleString()}<\/td>
+                    <td style="text-align:center">${r.remark || '-'}<\/td>
+                <\/tr>`;
+            });
+            html += `</tbody><\/table>`;
+        }
+        
+        if (paymentMatches.length > 0) {
+            html += `<div class="result-header">💸 付款记录 (${paymentMatches.length})</div>`;
+            html += `<table class="compact-table" style="margin-bottom: 16px;"><thead><th>日期</th><th>合同编号</th><th>合同名称</th><th>供应商</th><th>金额(¥)</th><th>备注</th></thead><tbody>`;
+            paymentMatches.forEach(p => {
+                html += `发展
+                    <td style="text-align:center">${p.date}<\/td>
+                    <td style="text-align:center">${p.contractId}<\/td>
+                    <td style="text-align:center">${p.contractName}<\/td>
+                    <td style="text-align:center">${p.supplier}<\/td>
+                    <td style="text-align:right">${p.amount.toLocaleString()}<\/td>
+                    <td style="text-align:center">${p.remark || '-'}<\/td>
+                <\/tr>`;
+            });
+            html += `</tbody><\/table>`;
+        }
+        
+        if (html === '') {
+            html = '<div class="stat-badge">未找到匹配的记录</div>';
+        }
+        
+        document.getElementById('searchResults').innerHTML = html;
+    }
+    
+    // ========= 分析数据模块（销售/采购总数据流）==========
+    function renderAnalysisModule() {
+        // 销售合同统计
+        const saleTotalAmount = saleContracts.reduce((sum, c) => sum + c.contractAmount, 0);
+        const saleTotalReceived = saleContracts.reduce((sum, c) => sum + getReceivedAmount(c.id), 0);
+        const saleTotalUnpaid = saleTotalAmount - saleTotalReceived;
+        const saleContractCount = saleContracts.length;
+        
+        // 采购合同统计
+        const purchaseTotalAmount = purchaseContracts.reduce((sum, c) => sum + c.totalAmount, 0);
+        const purchaseTotalPaid = purchaseContracts.reduce((sum, c) => sum + getPaidAmount(c.id), 0);
+        const purchaseTotalUnpaid = purchaseTotalAmount - purchaseTotalPaid;
+        const purchaseContractCount = purchaseContracts.length;
+        
+        // 逾期统计（销售）
+        const overdueSales = saleContracts.filter(c => calcOverdueDays(c.dueReceiveTime) > 0);
+        const overdueSalesAmount = overdueSales.reduce((sum, c) => sum + (c.contractAmount - getReceivedAmount(c.id)), 0);
+        
+        // 逾期统计（采购）
+        const overduePurchases = purchaseContracts.filter(c => calcOverdueDays(c.duePayTime) > 0);
+        const overduePurchasesAmount = overduePurchases.reduce((sum, c) => sum + (c.totalAmount - getPaidAmount(c.id)), 0);
+        
+        let html = `
+            <div class="section-title">📈 销售合同数据流</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="label">合同总数</div><div class="value">${saleContractCount}</div><div class="sub">份</div></div>
+                <div class="stat-card"><div class="label">合同总金额</div><div class="value">¥${saleTotalAmount.toLocaleString()}</div><div class="sub">应收总额</div></div>
+                <div class="stat-card"><div class="label">已收金额</div><div class="value">¥${saleTotalReceived.toLocaleString()}</div><div class="sub">回款进度 ${saleTotalAmount ? ((saleTotalReceived/saleTotalAmount)*100).toFixed(1) : 0}%</div></div>
+                <div class="stat-card"><div class="label">未收金额</div><div class="value">¥${saleTotalUnpaid.toLocaleString()}</div><div class="sub">其中逾期 ¥${overdueSalesAmount.toLocaleString()}</div></div>
+            </div>
+            <div class="scroll-area" style="max-height: 200px;">
+                <table class="compact-table">
+                    <thead><th>合同编号</th><th>项目名称</th><th>客户</th><th>合同金额(¥)</th><th>已收(¥)</th><th>未收(¥)</th><th>账期</th><th>逾期</th></thead>
+                    <tbody>
+                        ${saleContracts.map(c => {
+                            const received = getReceivedAmount(c.id);
+                            const unReceived = c.contractAmount - received;
+                            const overdueDays = calcOverdueDays(c.dueReceiveTime);
+                            return `发展
+                                <td style="text-align:center">${c.id}<\/td>
+                                <td style="text-align:center">${c.projectName}<\/td>
+                                <td style="text-align:center">${c.customerName}<\/td>
+                                <td style="text-align:right">${c.contractAmount.toLocaleString()}<\/td>
+                                <td style="text-align:right">${received.toLocaleString()}<\/td>
+                                <td style="text-align:right" class="${unReceived > 0 ? 'overdue-badge' : ''}">${unReceived.toLocaleString()}<\/td>
+                                <td style="text-align:center">${c.dueReceiveTime || '-'}<\/td>
+                                <td class="${overdueDays > 0 ? 'overdue-badge' : ''}">${overdueDays > 0 ? overdueDays + '天' : '-'}<\/td>
+                              <\/tr>`;
+                        }).join('')}
+                    </tbody>
+                  <\/table>
+            <\/div>
+            
+            <div class="section-title">📦 采购合同数据流</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="label">合同总数</div><div class="value">${purchaseContractCount}</div><div class="sub">份</div></div>
+                <div class="stat-card"><div class="label">合同总金额</div><div class="value">¥${purchaseTotalAmount.toLocaleString()}</div><div class="sub">应付总额</div></div>
+                <div class="stat-card"><div class="label">已付金额</div><div class="value">¥${purchaseTotalPaid.toLocaleString()}</div><div class="sub">付款进度 ${purchaseTotalAmount ? ((purchaseTotalPaid/purchaseTotalAmount)*100).toFixed(1) : 0}%</div></div>
+                <div class="stat-card"><div class="label">未付金额</div><div class="value">¥${purchaseTotalUnpaid.toLocaleString()}</div><div class="sub">其中逾期 ¥${overduePurchasesAmount.toLocaleString()}</div></div>
+            </div>
+            <div class="scroll-area" style="max-height: 200px;">
+                <table class="compact-table">
+                    <thead><th>合同号</th><th>采购产品</th><th>供应商</th><th>总价(¥)</th><th>已付(¥)</th><th>未付(¥)</th><th>账期</th><th>逾期</th></thead>
+                    <tbody>
+                        ${purchaseContracts.map(c => {
+                            const paid = getPaidAmount(c.id);
+                            const unPaid = c.totalAmount - paid;
+                            const overdueDays = calcOverdueDays(c.duePayTime);
+                            return `发展
+                                <td style="text-align:center">${c.contractNo || c.id}<\/td>
+                                <td style="text-align:center">${c.product}<\/td>
+                                <td style="text-align:center">${c.manufacturer}<\/td>
+                                <td style="text-align:right">${c.totalAmount.toLocaleString()}<\/td>
+                                <td style="text-align:right">${paid.toLocaleString()}<\/td>
+                                <td style="text-align:right" class="${unPaid > 0 ? 'overdue-badge' : ''}">${unPaid.toLocaleString()}<\/td>
+                                <td style="text-align:center">${c.duePayTime || '-'}<\/td>
+                                <td class="${overdueDays > 0 ? 'overdue-badge' : ''}">${overdueDays > 0 ? overdueDays + '天' : '-'}<\/td>
+                              <\/tr>`;
+                        }).join('')}
+                    </tbody>
+                  <\/table>
+            <\/div>
+        `;
+        return html;
+    }
+    
+    // ========= 数据导出模块（支持年月日范围导出）==========
+    function renderDataExportModule() {
+        // 获取当前日期作为默认值（最近30天）
+        const today = new Date();
+        const defaultEnd = today.toISOString().slice(0,10);
+        const defaultStart = new Date(today.setDate(today.getDate() - 30)).toISOString().slice(0,10);
+        
+        return `
+            <div class="export-panel">
+                <div class="date-range">
+                    <label>📅 开始日期：</label>
+                    <input type="date" id="exportStartDate" value="${defaultStart}">
+                    <label>📅 结束日期：</label>
+                    <input type="date" id="exportEndDate" value="${defaultEnd}">
+                    <button id="exportBtn">⬇️ 导出CSV（按日期筛选）</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 导出CSV函数
+    function exportDataToCSV() {
+        const startDateStr = document.getElementById('exportStartDate').value;
+        const endDateStr = document.getElementById('exportEndDate').value;
+        if (!startDateStr || !endDateStr) {
+            alert('请选择开始日期和结束日期');
+            return;
+        }
+        const startDate = new Date(startDateStr);
+        const endDate = new Date(endDateStr);
+        endDate.setHours(23,59,59,999); // 包含结束日期的整天
+        
+        // 辅助函数：判断日期是否在范围内
+        function isDateInRange(dateStr) {
+            if (!dateStr) return false;
+            const d = new Date(dateStr);
+            return d >= startDate && d <= endDate;
+        }
+        
+        // 筛选销售合同（使用项目开展日期 startDate）
+        const filteredSale = saleContracts.filter(c => isDateInRange(c.startDate));
+        // 筛选采购合同（使用签订日期 signDate）
+        const filteredPurchase = purchaseContracts.filter(c => isDateInRange(c.signDate));
+        // 筛选收款记录（使用收款日期 date）
+        const filteredReceipt = receiptRecords.filter(r => isDateInRange(r.date));
+        // 筛选付款记录（使用付款日期 date）
+        const filteredPayment = paymentRecords.filter(p => isDateInRange(p.date));
+        
+        // 构建CSV内容
+        let csvRows = [];
+        
+        // 销售合同部分
+        csvRows.push(['【销售合同】']);
+        csvRows.push(['合同编号','合同类型','项目名称','客户名称','合同金额(¥)','已收金额(¥)','未收金额(¥)','项目开展日期','应回款时间','实际回款时间','备注']);
+        filteredSale.forEach(c => {
+            const received = getReceivedAmount(c.id);
+            const unReceived = c.contractAmount - received;
+            csvRows.push([
+                c.id, c.contractType || '', c.projectName || '', c.customerName || '',
+                c.contractAmount, received, unReceived,
+                c.startDate || '', c.dueReceiveTime || '', c.actualReceiveTime || '', c.remark || ''
+            ]);
+        });
+        if (filteredSale.length === 0) csvRows.push(['无符合条件的数据']);
+        csvRows.push([]); // 空行分隔
+        
+        // 采购合同部分
+        csvRows.push(['【采购合同】']);
+        csvRows.push(['合同号','采购产品','供应商','总价(¥)','已付金额(¥)','未付金额(¥)','签订日期','应付账期','是否付款','备注']);
+        filteredPurchase.forEach(c => {
+            const paid = getPaidAmount(c.id);
+            const unPaid = c.totalAmount - paid;
+            csvRows.push([
+                c.contractNo || c.id, c.product || '', c.manufacturer || '',
+                c.totalAmount, paid, unPaid,
+                c.signDate || '', c.duePayTime || '', c.isPaid || '', c.remark || ''
+            ]);
+        });
+        if (filteredPurchase.length === 0) csvRows.push(['无符合条件的数据']);
+        csvRows.push([]);
+        
+        // 收款记录部分
+        csvRows.push(['【收款记录】']);
+        csvRows.push(['日期','合同编号','合同名称','客户名称','收款方式','金额(¥)','经办人','是否已开票','开票日期','备注']);
+        filteredReceipt.forEach(r => {
+            csvRows.push([
+                r.date, r.contractId, r.contractName, r.customerName, r.paymentMethod,
+                r.amount, r.handler, r.isInvoiced, r.invoiceDate || '', r.remark || ''
+            ]);
+        });
+        if (filteredReceipt.length === 0) csvRows.push(['无符合条件的数据']);
+        csvRows.push([]);
+        
+        // 付款记录部分
+        csvRows.push(['【付款记录】']);
+        csvRows.push(['日期','合同编号','合同名称','供应商','付款方式','金额(¥)','经办人','是否已开票','开票日期','备注']);
+        filteredPayment.forEach(p => {
+            csvRows.push([
+                p.date, p.contractId, p.contractName, p.supplier, p.paymentMethod,
+                p.amount, p.handler, p.isInvoiced, p.invoiceDate || '', p.remark || ''
+            ]);
+        });
+        if (filteredPayment.length === 0) csvRows.push(['无符合条件的数据']);
+        
+        // 转换为CSV字符串
+        const csvContent = csvRows.map(row => row.map(cell => {
+            // 处理包含逗号或换行符的单元格
+            if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
+                cell = cell.replace(/"/g, '""');
+                cell = `"${cell}"`;
+            }
+            return cell;
+        }).join(',')).join('\n');
+        
+        // 添加BOM以便正确显示中文
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.setAttribute('download', `合同数据_${startDateStr}_至_${endDateStr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        alert('导出成功！');
+    }
+    
+    // ========= 供应商管理模块 ==========
+    function renderSupplierManagement() { 
+        let html = `
+            <div class="scroll-area">
+                <table class="compact-table">
+                    <thead>
+                        <tr>
+                            <th>供应商名称</th>
+                            <th>联系人</th>
+                            <th>联系人电话</th>
+                            <th>供应商状态</th>
+                            <th>资质标签</th>
+                            <th>供货范围</th>
+                            <th>备注</th>
+                            <th>操作</th>
+                        <\/tr>
+                    </thead>
+                    <tbody>
+                        ${suppliers.map(s => `
+                            <tr data-supplier-id="${s.id}">
+                                日上午<input type="text" class="supplier-name" value="${s.name}" style="width:120px;"><\/td>
+                                日上午<input type="text" class="supplier-contact" value="${s.contact}" style="width:100px;"><\/td>
+                                日上午<input type="text" class="supplier-phone" value="${s.phone}" style="width:110px;"><\/td>
+                                日上午
+                                    <select class="supplier-status" style="width:110px;">
+                                        <option value="存续" ${s.status === '存续' ? 'selected' : ''}>存续</option>
+                                        <option value="暂停合作" ${s.status === '暂停合作' ? 'selected' : ''}>暂停合作</option>
+                                        <option value="踢出供应商名录" ${s.status === '踢出供应商名录' ? 'selected' : ''}>踢出供应商名录</option>
+                                    </select>
+                                <\/td>
+                                日上午<input type="text" class="supplier-qualification" value="${s.qualification || ''}" style="width:100px;" placeholder="如:ISO9001"><\/td>
+                                日上午<input type="text" class="supplier-scope" value="${s.scope || ''}" style="width:120px;" placeholder="如:办公设备/软件"><\/td>
+                                日上午<input type="text" class="supplier-remark" value="${s.remark || ''}" style="width:120px;"><\/td>
+                                日上午<button class="action-icon update-supplier-btn" data-id="${s.id}">💾 更新</button> <button class="action-icon del-supplier-btn" data-id="${s.id}">删除</button><\/td>
+                            <\/tr>
+                        `).join('')}
+                        ${suppliers.length === 0 ? '发展<td colspan="8" style="text-align:center">暂无供应商数据<\/td><\/tr>' : ''}
+                    </tbody>
+                <\/table>
+            <\/div>
+            <hr>
+            <div class="form-row">
+                <label>新增供应商</label>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <input id="supNameInp" placeholder="供应商名称 *" style="flex:1; min-width:120px;">
+                    <input id="supContactInp" placeholder="联系人" style="flex:1; min-width:100px;">
+                    <input id="supPhoneInp" placeholder="联系人电话" style="flex:1; min-width:110px;">
+                    <select id="supStatusInp" style="width:120px;">
+                        <option value="存续">存续</option>
+                        <option value="暂停合作">暂停合作</option>
+                        <option value="踢出供应商名录">踢出供应商名录</option>
+                    </select>
+                    <input id="supQualificationInp" placeholder="资质标签" style="flex:1; min-width:100px;">
+                    <input id="supScopeInp" placeholder="供货范围" style="flex:1; min-width:120px;">
+                    <input id="supRemarkInp" placeholder="备注" style="flex:1; min-width:100px;">
+                    <button id="addSupplierDynamic">➕ 添加</button>
+                </div>
+            </div>
+        `;
+        return html; 
+    }
+    
+    // 添加供应商
+    function addSupplier() {
+        let name = document.getElementById('supNameInp').value.trim();
+        let contact = document.getElementById('supContactInp').value.trim();
+        let phone = document.getElementById('supPhoneInp').value.trim();
+        let status = document.getElementById('supStatusInp').value;
+        let qualification = document.getElementById('supQualificationInp').value.trim();
+        let scope = document.getElementById('supScopeInp').value.trim();
+        let remark = document.getElementById('supRemarkInp').value.trim();
+        
+        if (!name) {
+            alert("供应商名称必填");
+            return;
+        }
+        
+        suppliers.push({
+            id: `SUP${Date.now()}`,
+            name: name,
+            contact: contact,
+            phone: phone,
+            status: status,
+            qualification: qualification,
+            scope: scope,
+            remark: remark
+        });
+        persistData();
+        alert("供应商已添加");
+        refreshCurrentModule('supplierMgmt');
+    }
+    
+    // 更新供应商
+    function updateSupplier(supplierId) {
+        const row = document.querySelector(`tr[data-supplier-id="${supplierId}"]`);
+        if (!row) return;
+        
+        const supplier = suppliers.find(s => s.id === supplierId);
+        if (!supplier) return;
+        
+        const newName = row.querySelector('.supplier-name')?.value.trim() || '';
+        const newContact = row.querySelector('.supplier-contact')?.value.trim() || '';
+        const newPhone = row.querySelector('.supplier-phone')?.value.trim() || '';
+        const newStatus = row.querySelector('.supplier-status')?.value || '';
+        const newQualification = row.querySelector('.supplier-qualification')?.value.trim() || '';
+        const newScope = row.querySelector('.supplier-scope')?.value.trim() || '';
+        const newRemark = row.querySelector('.supplier-remark')?.value.trim() || '';
+        
+        if (!newName) {
+            alert("供应商名称不能为空");
+            return;
+        }
+        
+        supplier.name = newName;
+        supplier.contact = newContact;
+        supplier.phone = newPhone;
+        supplier.status = newStatus;
+        supplier.qualification = newQualification;
+        supplier.scope = newScope;
+        supplier.remark = newRemark;
+        persistData();
+        alert("供应商信息已更新");
+        refreshCurrentModule('supplierMgmt');
+    }
+    
+    // 删除供应商
+    function deleteSupplier(supplierId) {
+        if (confirm('确定删除该供应商吗？')) {
+            const index = suppliers.findIndex(s => s.id === supplierId);
+            if (index !== -1) {
+                suppliers.splice(index, 1);
+                persistData();
+                alert("供应商已删除");
+                refreshCurrentModule('supplierMgmt');
+            }
+        }
+    }
+    
+    // ========= 合同台账模块 ==========
+    function renderSaleLedger() { 
+        if (saleContracts.length === 0) return '<div class="stat-badge">暂无销售合同数据</div>';
+        let html = `<div class="scroll-area"><table class="compact-table"><thead>  <tr>
+            <th>序号</th><th>类型</th><th>项目名称</th><th>订单编号</th><th>规格型号</th><th>对应设计师</th><th>内部项目编号</th><th>客户名称</th>
+            <th>项目开展日期</th><th>订单节点</th><th>报价单金额</th><th>合同金额</th><th>合同编号</th><th>交付时间</th>
+            <th>开票情况</th><th>开票时间</th><th>开票金额</th><th>应回款时间</th><th>实际回款时间</th><th>回款金额</th><th>备注</th><th>附件</th><th>操作</th>
+        <\/tr><\/thead><tbody>`;
+        saleContracts.forEach(c => { 
+            let attachCount = (attachments[c.id] || []).length; 
+            html += `<tr>
+                <td style="text-align:center">${c.seq}<\/td>
+                <td style="text-align:center">${c.contractType || ''}<\/td>
+                <td style="text-align:center">${c.projectName || ''}<\/td>
+                <td style="text-align:center">${c.orderNo || ''}<\/td>
+                <td style="text-align:center">${c.specModel || ''}<\/td>
+                <td style="text-align:center">${c.design || ''}<\/td>
+                <td style="text-align:center">${c.internalCode || ''}<\/td>
+                <td style="text-align:center">${c.customerName || ''}<\/td>
+                <td style="text-align:center">${c.startDate || ''}<\/td>
+                <td style="text-align:center">${c.orderNode || ''}<\/td>
+                <td style="text-align:right">${c.quoteAmount ? '¥' + c.quoteAmount.toLocaleString() : ''}<\/td>
+                <td style="text-align:right">${c.contractAmount ? '¥' + c.contractAmount.toLocaleString() : ''}<\/td>
+                <td style="text-align:center">${c.contractNo || ''}<\/td>
+                <td style="text-align:center">${c.deliveryTime || ''}<\/td>
+                <td style="text-align:center">${c.invoiceStatus || ''}<\/td>
+                <td style="text-align:center">${c.invoiceTime || ''}<\/td>
+                <td style="text-align:right">${c.invoiceAmount ? '¥' + c.invoiceAmount.toLocaleString() : ''}<\/td>
+                <td style="text-align:center">${c.dueReceiveTime || ''}<\/td>
+                <td style="text-align:center">${c.actualReceiveTime || ''}<\/td>
+                <td style="text-align:right">${c.receiveAmount ? '¥' + c.receiveAmount.toLocaleString() : ''}<\/td>
+                <td style="text-align:center">${(c.remark || '').substring(0, 15)}<\/td>
+                <td style="text-align:center">📎 ${attachCount}<\/td>
+                <td style="text-align:center"><button class="action-icon del-sale-btn" data-id="${c.id}">删除</button><\/td>
+            <\/tr>`;
+        });
+        html += `</tbody><\/table><\/div>`;
+        return html;
+    }
+    
+    function renderPurchaseLedger() { 
+        if (purchaseContracts.length === 0) return '<div class="stat-badge">暂无采购合同数据</div>';
+        let html = `<div class="scroll-area"><table class="compact-table"><thead>  <tr>
+            <th>序号</th><th>厂家</th><th>联系人</th><th>电话</th><th>采购产品</th><th>型号</th><th>数量</th><th>单价</th>
+            <th>总价</th><th>周期</th><th>合同号</th><th>合同签订日期</th><th>是否到期</th><th>对应内部项目编号</th>
+            <th>项目名称</th><th>产品是否合格</th><th>是否付款</th><th>是否开票</th><th>是否入库</th><th>备注</th><th>附件</th><th>操作</th>
+        <\/tr><\/thead><tbody>`;
+        purchaseContracts.forEach(c => { 
+            let attachCount = (attachments[c.id] || []).length; 
+            html += `<tr>
+                <td style="text-align:center">${c.seq}<\/td>
+                <td style="text-align:center">${c.manufacturer || ''}<\/td>
+                <td style="text-align:center">${c.contact || ''}<\/td>
+                <td style="text-align:center">${c.phone || ''}<\/td>
+                <td style="text-align:center">${c.product || ''}<\/td>
+                <td style="text-align:center">${c.model || ''}<\/td>
+                <td style="text-align:center">${c.quantity || ''}<\/td>
+                <td style="text-align:right">${c.unitPrice ? '¥' + c.unitPrice.toLocaleString() : ''}<\/td>
+                <td style="text-align:right">${c.totalAmount ? '¥' + c.totalAmount.toLocaleString() : ''}<\/td>
+                <td style="text-align:center">${c.cycle || ''}<\/td>
+                <td style="text-align:center">${c.contractNo || ''}<\/td>
+                <td style="text-align:center">${c.signDate || ''}<\/td>
+                <td style="text-align:center">${c.isExpired || ''}<\/td>
+                <td style="text-align:center">${c.internalProjectCode || ''}<\/td>
+                <td style="text-align:center">${c.projectName || ''}<\/td>
+                <td style="text-align:center">${c.isQualified || ''}<\/td>
+                <td style="text-align:center">${c.isPaid || ''}<\/td>
+                <td style="text-align:center">${c.isInvoiced || ''}<\/td>
+                <td style="text-align:center">${c.isInStock || ''}<\/td>
+                <td style="text-align:center">${(c.remark || '').substring(0, 15)}<\/td>
+                <td style="text-align:center">📎 ${attachCount}<\/td>
+                <td style="text-align:center"><button class="action-icon del-purchase-btn" data-id="${c.id}">删除</button><\/td>
+            <\/tr>`;
+        });
+        html += `</tbody><\/table><\/div>`;
+        return html;
+    }
+    
+    function renderContractLedgerWithTabs() { 
+        return `<div class="sub-tab">
+            <button class="sub-tab-btn active" data-ledger="sale">📈 销售合同台账</button>
+            <button class="sub-tab-btn" data-ledger="purchase">📦 采购合同台账</button>
+        </div>
+        <div id="saleLedgerPane" class="ledger-pane active-pane">${renderSaleLedger()}</div>
+        <div id="purchaseLedgerPane" class="ledger-pane">${renderPurchaseLedger()}</div>`;
+    }
+    
+    // ========= 收付款管理模块（已修改下拉选项仅显示编号）==========
+    function renderReceiptForm() { 
+        let contractOptions = saleContracts.map(c => `<option value="${c.id}" data-name="${c.projectName}" data-customer="${c.customerName}">${c.id}</option>`).join(''); 
+        return `<div class="form-grid-2"><div class="form-row"><label>日期 *</label><input type="date" id="receipt_date"></div><div class="form-row"><label>合同编号 *</label><select id="receipt_contractId">${contractOptions || '<option>暂无销售合同</option>'}</select></div><div class="form-row"><label>合同名称 *</label><input type="text" id="receipt_contractName" readonly style="background:#f5f7fa;"></div><div class="form-row"><label>客户名称 *</label><input type="text" id="receipt_customerName" readonly style="background:#f5f7fa;"></div><div class="form-row"><label>收款方式 *</label><select id="receipt_method"><option>银行转账</option><option>现金</option><option>支票</option><option>承兑汇票</option><option>其他</option></select></div><div class="form-row"><label>收款金额(¥) *</label><input type="number" id="receipt_amount"></div><div class="form-row"><label>经办人 *</label><input type="text" id="receipt_handler"></div><div class="form-row"><label>是否已开票 *</label><select id="receipt_isInvoiced"><option>未开票</option><option>已开票</option><option>部分开票</option></select></div><div class="form-row"><label>开票日期</label><input type="date" id="receipt_invoiceDate"></div><div class="form-row"><label>备注</label><textarea id="receipt_remark" rows="2"></textarea></div></div><button id="addReceiptBtn" style="margin-top: 12px;">✅ 添加收款记录</button>`; 
+    }
+    
+    function renderPaymentForm() { 
+        let contractOptions = purchaseContracts.map(c => `<option value="${c.id}" data-name="${c.product}" data-supplier="${c.manufacturer}">${c.id}</option>`).join(''); 
+        return `<div class="form-grid-2"><div class="form-row"><label>日期 *</label><input type="date" id="payment_date"></div><div class="form-row"><label>合同编号 *</label><select id="payment_contractId">${contractOptions || '<option>暂无采购合同</option>'}</select></div><div class="form-row"><label>合同名称 *</label><input type="text" id="payment_contractName" readonly style="background:#f5f7fa;"></div><div class="form-row"><label>供应商 *</label><input type="text" id="payment_supplier" readonly style="background:#f5f7fa;"></div><div class="form-row"><label>付款方式 *</label><select id="payment_method"><option>银行转账</option><option>现金</option><option>支票</option><option>承兑汇票</option><option>其他</option></select></div><div class="form-row"><label>付款金额(¥) *</label><input type="number" id="payment_amount"></div><div class="form-row"><label>经办人 *</label><input type="text" id="payment_handler"></div><div class="form-row"><label>是否已开票 *</label><select id="payment_isInvoiced"><option>未开票</option><option>已开票</option><option>部分开票</option></select></div><div class="form-row"><label>开票日期</label><input type="date" id="payment_invoiceDate"></div><div class="form-row"><label>备注</label><textarea id="payment_remark" rows="2"></textarea></div></div><button id="addPaymentBtn" style="margin-top: 12px;">✅ 添加付款记录</button>`; 
+    }
+    
+    function renderReceiptRecords() { 
+        if (receiptRecords.length === 0) return '<div class="stat-badge">暂无收款记录</div>'; 
+        let html = `<div class="scroll-area"><table class="compact-table"><thead> <tr><th>序号</th><th>日期</th><th>合同编号</th><th>合同名称</th><th>客户名称</th><th>收款方式</th><th>收款金额(¥)</th><th>经办人</th><th>是否已开票</th><th>开票日期</th><th>备注</th><th>操作</th><\/tr><\/thead><tbody>`; 
+        receiptRecords.forEach((r, idx) => { html += `<tr><td style="text-align:center">${idx+1}<\/td><td style="text-align:center">${r.date}<\/td><td style="text-align:center">${r.contractId}<\/td><td style="text-align:center">${r.contractName}<\/td><td style="text-align:center">${r.customerName}<\/td><td style="text-align:center">${r.paymentMethod}<\/td><td style="text-align:right">${r.amount.toLocaleString()}<\/td><td style="text-align:center">${r.handler}<\/td><td style="text-align:center">${r.isInvoiced}<\/td><td style="text-align:center">${r.invoiceDate || '-'}<\/td><td style="text-align:center">${(r.remark || '').substring(0,15)}<\/td><td style="text-align:center"><button class="action-icon del-receipt-btn" data-id="${r.id}">删除</button><\/td><\/tr>`; }); 
+        html += `</tbody><\/table><\/div>`; 
+        return html; 
+    }
+    
+    function renderPaymentRecords() { 
+        if (paymentRecords.length === 0) return '<div class="stat-badge">暂无付款记录</div>'; 
+        let html = `<div class="scroll-area"><table class="compact-table"><thead> <tr><th>序号</th><th>日期</th><th>合同编号</th><th>合同名称</th><th>供应商</th><th>付款方式</th><th>付款金额(¥)</th><th>经办人</th><th>是否已开票</th><th>开票日期</th><th>备注</th><th>操作</th><\/tr><\/thead><tbody>`; 
+        paymentRecords.forEach((p, idx) => { html += `<tr><td style="text-align:center">${idx+1}<\/td><td style="text-align:center">${p.date}<\/td><td style="text-align:center">${p.contractId}<\/td><td style="text-align:center">${p.contractName}<\/td><td style="text-align:center">${p.supplier}<\/td><td style="text-align:center">${p.paymentMethod}<\/td><td style="text-align:right">${p.amount.toLocaleString()}<\/td><td style="text-align:center">${p.handler}<\/td><td style="text-align:center">${p.isInvoiced}<\/td><td style="text-align:center">${p.invoiceDate || '-'}<\/td><td style="text-align:center">${(p.remark || '').substring(0,15)}<\/td><td style="text-align:center"><button class="action-icon del-payment-btn" data-id="${p.id}">删除</button><\/td><\/tr>`; }); 
+        html += `</tbody><\/table><\/div>`; 
+        return html; 
+    }
+    
+    function renderPaymentReceiptWithTabs() { 
+        return `<div class="sub-tab"><button class="sub-tab-btn active" data-payment="receipt">💰 收款记录</button><button class="sub-tab-btn" data-payment="payment">💸 付款记录</button></div>
+        <div id="receiptPane" class="payment-pane active-pane"><div style="margin-bottom:20px;"><h4 style="color:#1f4662;">➕ 新增收款记录</h4></div>${renderReceiptForm()}<div style="margin-top:30px;"><h4 style="color:#1f4662;">📋 收款记录列表</h4></div><div id="receiptList">${renderReceiptRecords()}</div></div>
+        <div id="paymentPane" class="payment-pane"><div style="margin-bottom:20px;"><h4 style="color:#1f4662;">➕ 新增付款记录</h4></div>${renderPaymentForm()}<div style="margin-top:30px;"><h4 style="color:#1f4662;">📋 付款记录列表</h4></div><div id="paymentList">${renderPaymentRecords()}</div></div>`; 
+    }
+    
+    // ========= 合同录入模块（已修改草稿保存所有字段）==========
+    function renderContractEntryWithTabs() { return `<div class="tab-buttons"><button class="tab-btn active" data-tab="sale">📈 销售合同录入</button><button class="tab-btn" data-tab="purchase">📦 采购合同录入</button></div><div id="saleTab" class="tab-pane active-pane">${renderSaleContractForm()}</div><div id="purchaseTab" class="tab-pane">${renderPurchaseContractForm()}</div>`; }
+    
+    // 销售合同录入表单
+    function renderSaleContractForm() { 
+        return `<div class="form-grid-2">
+            <div class="form-row"><label>类型 *</label><input id="sale_contractType" placeholder="如:软件销售"></div>
+            <div class="form-row"><label>项目名称 *</label><input id="sale_projectName" placeholder="项目名称"></div>
+            <div class="form-row"><label>订单编号</label><input id="sale_orderNo" placeholder="订单编号"></div>
+            <div class="form-row"><label>规格型号</label><input id="sale_specModel" placeholder="规格型号"></div>
+            <div class="form-row"><label>对应设计师</label><input id="sale_design" placeholder="对应设计师"></div>
+            <div class="form-row"><label>翼为内部项目编号</label><input id="sale_internalCode" placeholder="内部项目编号"></div>
+            <div class="form-row"><label>客户名称 *</label><input id="sale_customerName" placeholder="客户名称"></div>
+            <div class="form-row"><label>项目开展日期</label><input id="sale_startDate" type="date"></div>
+            <div class="form-row"><label>订单节点</label><input id="sale_orderNode" placeholder="订单节点"></div>
+            <div class="form-row"><label>报价单金额(¥)</label><input id="sale_quoteAmount" type="number"></div>
+            <div class="form-row"><label>合同金额(¥) *</label><input id="sale_contractAmount" type="number"></div>
+            <div class="form-row"><label>合同编号</label><input id="sale_contractNo" placeholder="合同编号"></div>
+            <div class="form-row"><label>交付时间</label><input id="sale_deliveryTime" type="date"></div>
+            <div class="form-row"><label>开票情况</label><select id="sale_invoiceStatus"><option>未开票</option><option>部分开票</option><option>已开票</option></select></div>
+            <div class="form-row"><label>开票时间</label><input id="sale_invoiceTime" type="date"></div>
+            <div class="form-row"><label>开票金额(¥)</label><input id="sale_invoiceAmount" type="number"></div>
+            <div class="form-row"><label>应回款时间</label><input id="sale_dueReceiveTime" type="date"></div>
+            <div class="form-row"><label>实际回款时间</label><input id="sale_actualReceiveTime" type="date"></div>
+            <div class="form-row"><label>回款金额(¥)</label><input id="sale_receiveAmount" type="number"></div>
+            <div class="form-row"><label>备注</label><textarea id="sale_remark" rows="2"></textarea></div>
+            <div class="form-row"><label>📎 添加附件</label><input type="file" id="sale_attachment" multiple></div>
+        </div>
+        <div class="draft-actions"><button type="button" id="saveSaleDraftBtn" class="draft-btn">💾 保存草稿</button><button type="button" id="restoreSaleDraftBtn" class="restore-btn">📂 恢复草稿</button></div>
+        <button id="saveSaleContractBtn">✅ 保存销售合同</button>`;
+    }
+    
+    // 采购合同录入表单
+    function renderPurchaseContractForm() { 
+        return `<div class="form-grid-2">
+            <div class="form-row"><label>厂家 *</label><input id="pur_manufacturer" placeholder="厂家名称"></div>
+            <div class="form-row"><label>联系人</label><input id="pur_contact" placeholder="联系人"></div>
+            <div class="form-row"><label>电话</label><input id="pur_phone" placeholder="电话"></div>
+            <div class="form-row"><label>采购产品 *</label><input id="pur_product" placeholder="采购产品"></div>
+            <div class="form-row"><label>型号</label><input id="pur_model" placeholder="型号"></div>
+            <div class="form-row"><label>数量</label><input id="pur_quantity" type="number"></div>
+            <div class="form-row"><label>单价(¥)</label><input id="pur_unitPrice" type="number"></div>
+            <div class="form-row"><label>总价(¥) *</label><input id="pur_totalAmount" type="number"></div>
+            <div class="form-row"><label>周期</label><input id="pur_cycle" placeholder="周期"></div>
+            <div class="form-row"><label>合同号</label><input id="pur_contractNo" placeholder="合同号"></div>
+            <div class="form-row"><label>合同签订日期</label><input id="pur_signDate" type="date"></div>
+            <div class="form-row"><label>是否到期</label><select id="pur_isExpired"><option>否</option><option>是</option><option>即将到期</option></select></div>
+            <div class="form-row"><label>对应内部项目编号</label><input id="pur_internalProjectCode" placeholder="对应内部项目编号"></div>
+            <div class="form-row"><label>项目名称</label><input id="pur_projectName" placeholder="项目名称"></div>
+            <div class="form-row"><label>产品是否合格</label><select id="pur_isQualified"><option>是</option><option>否</option><option>待检验</option></select></div>
+            <div class="form-row"><label>是否付款</label><select id="pur_isPaid"><option>未付款</option><option>部分付款</option><option>已付款</option></select></div>
+            <div class="form-row"><label>是否开票</label><select id="pur_isInvoiced"><option>未开票</option><option>部分开票</option><option>已开票</option></select></div>
+            <div class="form-row"><label>是否做入库</label><select id="pur_isInStock"><option>未入库</option><option>部分入库</option><option>已入库</option></select></div>
+            <div class="form-row"><label>备注</label><textarea id="pur_remark" rows="2"></textarea></div>
+            <div class="form-row"><label>📎 添加附件</label><input type="file" id="pur_attachment" multiple></div>
+        </div>
+        <div class="draft-actions"><button type="button" id="savePurchaseDraftBtn" class="draft-btn">💾 保存草稿</button><button type="button" id="restorePurchaseDraftBtn" class="restore-btn">📂 恢复草稿</button></div>
+        <button id="savePurchaseContractBtn">✅ 保存采购合同</button>`;
+    }
+    
+    // 销售合同草稿：保存所有字段
+    function saveSaleDraft() {
+        const draft = {
+            contractType: document.getElementById('sale_contractType')?.value || '',
+            projectName: document.getElementById('sale_projectName')?.value || '',
+            orderNo: document.getElementById('sale_orderNo')?.value || '',
+            specModel: document.getElementById('sale_specModel')?.value || '',
+            design: document.getElementById('sale_design')?.value || '',
+            internalCode: document.getElementById('sale_internalCode')?.value || '',
+            customerName: document.getElementById('sale_customerName')?.value || '',
+            startDate: document.getElementById('sale_startDate')?.value || '',
+            orderNode: document.getElementById('sale_orderNode')?.value || '',
+            quoteAmount: document.getElementById('sale_quoteAmount')?.value || '',
+            contractAmount: document.getElementById('sale_contractAmount')?.value || '',
+            contractNo: document.getElementById('sale_contractNo')?.value || '',
+            deliveryTime: document.getElementById('sale_deliveryTime')?.value || '',
+            invoiceStatus: document.getElementById('sale_invoiceStatus')?.value || '',
+            invoiceTime: document.getElementById('sale_invoiceTime')?.value || '',
+            invoiceAmount: document.getElementById('sale_invoiceAmount')?.value || '',
+            dueReceiveTime: document.getElementById('sale_dueReceiveTime')?.value || '',
+            actualReceiveTime: document.getElementById('sale_actualReceiveTime')?.value || '',
+            receiveAmount: document.getElementById('sale_receiveAmount')?.value || '',
+            remark: document.getElementById('sale_remark')?.value || ''
+        };
+        localStorage.setItem(SALE_DRAFT_KEY, JSON.stringify(draft));
+        alert('销售合同草稿已保存（所有字段）');
+    }
+    
+    // 销售合同恢复草稿：恢复所有字段
+    function restoreSaleDraft() {
+        const draft = JSON.parse(localStorage.getItem(SALE_DRAFT_KEY) || '{}');
+        if (draft.contractType) document.getElementById('sale_contractType').value = draft.contractType;
+        if (draft.projectName) document.getElementById('sale_projectName').value = draft.projectName;
+        if (draft.orderNo) document.getElementById('sale_orderNo').value = draft.orderNo;
+        if (draft.specModel) document.getElementById('sale_specModel').value = draft.specModel;
+        if (draft.design) document.getElementById('sale_design').value = draft.design;
+        if (draft.internalCode) document.getElementById('sale_internalCode').value = draft.internalCode;
+        if (draft.customerName) document.getElementById('sale_customerName').value = draft.customerName;
+        if (draft.startDate) document.getElementById('sale_startDate').value = draft.startDate;
+        if (draft.orderNode) document.getElementById('sale_orderNode').value = draft.orderNode;
+        if (draft.quoteAmount) document.getElementById('sale_quoteAmount').value = draft.quoteAmount;
+        if (draft.contractAmount) document.getElementById('sale_contractAmount').value = draft.contractAmount;
+        if (draft.contractNo) document.getElementById('sale_contractNo').value = draft.contractNo;
+        if (draft.deliveryTime) document.getElementById('sale_deliveryTime').value = draft.deliveryTime;
+        if (draft.invoiceStatus) document.getElementById('sale_invoiceStatus').value = draft.invoiceStatus;
+        if (draft.invoiceTime) document.getElementById('sale_invoiceTime').value = draft.invoiceTime;
+        if (draft.invoiceAmount) document.getElementById('sale_invoiceAmount').value = draft.invoiceAmount;
+        if (draft.dueReceiveTime) document.getElementById('sale_dueReceiveTime').value = draft.dueReceiveTime;
+        if (draft.actualReceiveTime) document.getElementById('sale_actualReceiveTime').value = draft.actualReceiveTime;
+        if (draft.receiveAmount) document.getElementById('sale_receiveAmount').value = draft.receiveAmount;
+        if (draft.remark) document.getElementById('sale_remark').value = draft.remark;
+        alert('草稿恢复成功');
+    }
+    
+    // 采购合同草稿：保存所有字段
+    function savePurchaseDraft() {
+        const draft = {
+            manufacturer: document.getElementById('pur_manufacturer')?.value || '',
+            contact: document.getElementById('pur_contact')?.value || '',
+            phone: document.getElementById('pur_phone')?.value || '',
+            product: document.getElementById('pur_product')?.value || '',
+            model: document.getElementById('pur_model')?.value || '',
+            quantity: document.getElementById('pur_quantity')?.value || '',
+            unitPrice: document.getElementById('pur_unitPrice')?.value || '',
+            totalAmount: document.getElementById('pur_totalAmount')?.value || '',
+            cycle: document.getElementById('pur_cycle')?.value || '',
+            contractNo: document.getElementById('pur_contractNo')?.value || '',
+            signDate: document.getElementById('pur_signDate')?.value || '',
+            isExpired: document.getElementById('pur_isExpired')?.value || '',
+            internalProjectCode: document.getElementById('pur_internalProjectCode')?.value || '',
+            projectName: document.getElementById('pur_projectName')?.value || '',
+            isQualified: document.getElementById('pur_isQualified')?.value || '',
+            isPaid: document.getElementById('pur_isPaid')?.value || '',
+            isInvoiced: document.getElementById('pur_isInvoiced')?.value || '',
+            isInStock: document.getElementById('pur_isInStock')?.value || '',
+            remark: document.getElementById('pur_remark')?.value || ''
+        };
+        localStorage.setItem(PURCHASE_DRAFT_KEY, JSON.stringify(draft));
+        alert('采购合同草稿已保存（所有字段）');
+    }
+    
+    // 采购合同恢复草稿：恢复所有字段
+    function restorePurchaseDraft() {
+        const draft = JSON.parse(localStorage.getItem(PURCHASE_DRAFT_KEY) || '{}');
+        if (draft.manufacturer) document.getElementById('pur_manufacturer').value = draft.manufacturer;
+        if (draft.contact) document.getElementById('pur_contact').value = draft.contact;
+        if (draft.phone) document.getElementById('pur_phone').value = draft.phone;
+        if (draft.product) document.getElementById('pur_product').value = draft.product;
+        if (draft.model) document.getElementById('pur_model').value = draft.model;
+        if (draft.quantity) document.getElementById('pur_quantity').value = draft.quantity;
+        if (draft.unitPrice) document.getElementById('pur_unitPrice').value = draft.unitPrice;
+        if (draft.totalAmount) document.getElementById('pur_totalAmount').value = draft.totalAmount;
+        if (draft.cycle) document.getElementById('pur_cycle').value = draft.cycle;
+        if (draft.contractNo) document.getElementById('pur_contractNo').value = draft.contractNo;
+        if (draft.signDate) document.getElementById('pur_signDate').value = draft.signDate;
+        if (draft.isExpired) document.getElementById('pur_isExpired').value = draft.isExpired;
+        if (draft.internalProjectCode) document.getElementById('pur_internalProjectCode').value = draft.internalProjectCode;
+        if (draft.projectName) document.getElementById('pur_projectName').value = draft.projectName;
+        if (draft.isQualified) document.getElementById('pur_isQualified').value = draft.isQualified;
+        if (draft.isPaid) document.getElementById('pur_isPaid').value = draft.isPaid;
+        if (draft.isInvoiced) document.getElementById('pur_isInvoiced').value = draft.isInvoiced;
+        if (draft.isInStock) document.getElementById('pur_isInStock').value = draft.isInStock;
+        if (draft.remark) document.getElementById('pur_remark').value = draft.remark;
+        alert('草稿恢复成功');
+    }
+    
+    function saveAttachments(contractId, files, callback) { 
+        if (!files || files.length === 0) { if(callback) callback(); return; } 
+        let promises = []; 
+        Array.from(files).forEach(file => { 
+            let reader = new FileReader(); 
+            let p = new Promise((resolve) => { 
+                reader.onload = (e) => { 
+                    if (!attachments[contractId]) attachments[contractId] = []; 
+                    attachments[contractId].push({ id: Date.now() + "_" + file.name, name: file.name, size: file.size, type: file.type, dataURL: e.target.result }); 
+                    resolve(); 
+                }; 
+                reader.readAsDataURL(file); 
+            }); 
+            promises.push(p); 
+        }); 
+        Promise.all(promises).then(() => { if(callback) callback(); persistData(); }); 
+    }
+    
+    function attachModuleEvents(moduleKey) { 
+        if (moduleKey === 'contractEntry') {
+            const saleBtn = document.querySelector('.tab-btn[data-tab="sale"]');
+            const purchaseBtn = document.querySelector('.tab-btn[data-tab="purchase"]');
+            if (saleBtn && purchaseBtn) {
+                saleBtn.onclick = () => { saleBtn.classList.add('active'); purchaseBtn.classList.remove('active'); document.getElementById('saleTab').classList.add('active-pane'); document.getElementById('purchaseTab').classList.remove('active-pane'); };
+                purchaseBtn.onclick = () => { purchaseBtn.classList.add('active'); saleBtn.classList.remove('active'); document.getElementById('purchaseTab').classList.add('active-pane'); document.getElementById('saleTab').classList.remove('active-pane'); };
+            }
+            document.getElementById('saveSaleDraftBtn')?.addEventListener('click', saveSaleDraft);
+            document.getElementById('restoreSaleDraftBtn')?.addEventListener('click', restoreSaleDraft);
+            document.getElementById('savePurchaseDraftBtn')?.addEventListener('click', savePurchaseDraft);
+            document.getElementById('restorePurchaseDraftBtn')?.addEventListener('click', restorePurchaseDraft);
+            document.getElementById('saveSaleContractBtn')?.addEventListener('click', () => { let contractNo = document.getElementById('sale_contractNo').value.trim() || `SALE_${Date.now()}`; if (saleContracts.some(c => c.id === contractNo)) { alert("合同编号已存在"); return; } let projectName = document.getElementById('sale_projectName').value.trim(); let customerName = document.getElementById('sale_customerName').value.trim(); let contractAmount = parseFloat(document.getElementById('sale_contractAmount').value); if (!projectName || !customerName || isNaN(contractAmount) || contractAmount <= 0) { alert("请填写项目名称、客户名称和有效合同金额"); return; } let newContract = { id: contractNo, seq: saleContracts.length+1, contractType: document.getElementById('sale_contractType').value, projectName, orderNo: document.getElementById('sale_orderNo').value, specModel: document.getElementById('sale_specModel').value, design: document.getElementById('sale_design').value, internalCode: document.getElementById('sale_internalCode').value, customerName, startDate: document.getElementById('sale_startDate').value, orderNode: document.getElementById('sale_orderNode').value, quoteAmount: parseFloat(document.getElementById('sale_quoteAmount').value) || 0, contractAmount, contractNo, deliveryTime: document.getElementById('sale_deliveryTime').value, invoiceStatus: document.getElementById('sale_invoiceStatus').value, invoiceTime: document.getElementById('sale_invoiceTime').value, invoiceAmount: parseFloat(document.getElementById('sale_invoiceAmount').value) || 0, dueReceiveTime: document.getElementById('sale_dueReceiveTime').value, actualReceiveTime: document.getElementById('sale_actualReceiveTime').value, receiveAmount: parseFloat(document.getElementById('sale_receiveAmount').value) || 0, remark: document.getElementById('sale_remark').value }; let files = document.getElementById('sale_attachment').files; saveAttachments(contractNo, files, () => { saleContracts.push(newContract); updateSaleSeq(); persistData(); localStorage.removeItem(SALE_DRAFT_KEY); alert(`销售合同保存成功`); refreshCurrentModule(moduleKey); }); });
+            document.getElementById('savePurchaseContractBtn')?.addEventListener('click', () => { let contractNo = document.getElementById('pur_contractNo').value.trim() || `PUR_${Date.now()}`; if (purchaseContracts.some(c => c.id === contractNo)) { alert("合同号已存在"); return; } let manufacturer = document.getElementById('pur_manufacturer').value.trim(); let product = document.getElementById('pur_product').value.trim(); let totalAmount = parseFloat(document.getElementById('pur_totalAmount').value); if (!manufacturer || !product || isNaN(totalAmount) || totalAmount <= 0) { alert("请填写厂家、采购产品和有效总价"); return; } let newContract = { id: contractNo, seq: purchaseContracts.length+1, contractNo, manufacturer, contact: document.getElementById('pur_contact').value, phone: document.getElementById('pur_phone').value, product, model: document.getElementById('pur_model').value, quantity: parseFloat(document.getElementById('pur_quantity').value) || 0, unitPrice: parseFloat(document.getElementById('pur_unitPrice').value) || 0, totalAmount, cycle: document.getElementById('pur_cycle').value, signDate: document.getElementById('pur_signDate').value, isExpired: document.getElementById('pur_isExpired').value, internalProjectCode: document.getElementById('pur_internalProjectCode').value, projectName: document.getElementById('pur_projectName').value, isQualified: document.getElementById('pur_isQualified').value, isPaid: document.getElementById('pur_isPaid').value, isInvoiced: document.getElementById('pur_isInvoiced').value, isInStock: document.getElementById('pur_isInStock').value, remark: document.getElementById('pur_remark').value, duePayTime: '' }; let files = document.getElementById('pur_attachment').files; saveAttachments(contractNo, files, () => { purchaseContracts.push(newContract); updatePurchaseSeq(); persistData(); localStorage.removeItem(PURCHASE_DRAFT_KEY); alert(`采购合同保存成功`); refreshCurrentModule(moduleKey); }); });
+        }
+        else if (moduleKey === 'receivable') {
+            document.querySelectorAll('.save-receivable-edit-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const contractId = btn.getAttribute('data-id');
+                    saveReceivableEdit(contractId);
+                };
+            });
+        }
+        else if (moduleKey === 'payable') {
+            document.querySelectorAll('.save-payable-edit-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const contractId = btn.getAttribute('data-id');
+                    savePayableEdit(contractId);
+                };
+            });
+        }
+        else if (moduleKey === 'paymentReceipt') {
+            const receiptBtn = document.querySelector('.sub-tab-btn[data-payment="receipt"]');
+            const paymentBtn = document.querySelector('.sub-tab-btn[data-payment="payment"]');
+            if (receiptBtn && paymentBtn) {
+                receiptBtn.onclick = () => { receiptBtn.classList.add('active'); paymentBtn.classList.remove('active'); document.getElementById('receiptPane').classList.add('active-pane'); document.getElementById('paymentPane').classList.remove('active-pane'); };
+                paymentBtn.onclick = () => { paymentBtn.classList.add('active'); receiptBtn.classList.remove('active'); document.getElementById('paymentPane').classList.add('active-pane'); document.getElementById('receiptPane').classList.remove('active-pane'); };
+            }
+            const receiptSelect = document.getElementById('receipt_contractId');
+            if (receiptSelect) { receiptSelect.addEventListener('change', () => { const selected = receiptSelect.options[receiptSelect.selectedIndex]; document.getElementById('receipt_contractName').value = selected.getAttribute('data-name') || ''; document.getElementById('receipt_customerName').value = selected.getAttribute('data-customer') || ''; }); receiptSelect.dispatchEvent(new Event('change')); }
+            document.getElementById('addReceiptBtn')?.addEventListener('click', () => { const date = document.getElementById('receipt_date').value; const contractId = document.getElementById('receipt_contractId').value; const contractName = document.getElementById('receipt_contractName').value; const customerName = document.getElementById('receipt_customerName').value; const paymentMethod = document.getElementById('receipt_method').value; const amount = parseFloat(document.getElementById('receipt_amount').value); const handler = document.getElementById('receipt_handler').value; const isInvoiced = document.getElementById('receipt_isInvoiced').value; const invoiceDate = document.getElementById('receipt_invoiceDate').value; const remark = document.getElementById('receipt_remark').value; if (!date || !contractId || !contractName || !customerName || !paymentMethod || !amount || !handler) { alert('请填写所有必填项'); return; } receiptRecords.push({ id: `R${Date.now()}`, date, contractId, contractName, customerName, paymentMethod, amount, handler, isInvoiced, invoiceDate, remark }); persistData(); document.getElementById('receiptList').innerHTML = renderReceiptRecords(); document.getElementById('receipt_date').value = ''; document.getElementById('receipt_amount').value = ''; document.getElementById('receipt_handler').value = ''; document.getElementById('receipt_remark').value = ''; document.getElementById('receipt_invoiceDate').value = ''; attachReceiptDeleteEvents(); alert('收款记录添加成功'); });
+            const paymentSelect = document.getElementById('payment_contractId');
+            if (paymentSelect) { paymentSelect.addEventListener('change', () => { const selected = paymentSelect.options[paymentSelect.selectedIndex]; document.getElementById('payment_contractName').value = selected.getAttribute('data-name') || ''; document.getElementById('payment_supplier').value = selected.getAttribute('data-supplier') || ''; }); paymentSelect.dispatchEvent(new Event('change')); }
+            document.getElementById('addPaymentBtn')?.addEventListener('click', () => { const date = document.getElementById('payment_date').value; const contractId = document.getElementById('payment_contractId').value; const contractName = document.getElementById('payment_contractName').value; const supplier = document.getElementById('payment_supplier').value; const paymentMethod = document.getElementById('payment_method').value; const amount = parseFloat(document.getElementById('payment_amount').value); const handler = document.getElementById('payment_handler').value; const isInvoiced = document.getElementById('payment_isInvoiced').value; const invoiceDate = document.getElementById('payment_invoiceDate').value; const remark = document.getElementById('payment_remark').value; if (!date || !contractId || !contractName || !supplier || !paymentMethod || !amount || !handler) { alert('请填写所有必填项'); return; } paymentRecords.push({ id: `P${Date.now()}`, date, contractId, contractName, supplier, paymentMethod, amount, handler, isInvoiced, invoiceDate, remark }); persistData(); document.getElementById('paymentList').innerHTML = renderPaymentRecords(); document.getElementById('payment_date').value = ''; document.getElementById('payment_amount').value = ''; document.getElementById('payment_handler').value = ''; document.getElementById('payment_remark').value = ''; document.getElementById('payment_invoiceDate').value = ''; attachPaymentDeleteEvents(); alert('付款记录添加成功'); });
+            attachReceiptDeleteEvents(); attachPaymentDeleteEvents();
+        }
+        else if (moduleKey === 'contractLedger') {
+            const saleLedgerBtn = document.querySelector('.sub-tab-btn[data-ledger="sale"]');
+            const purchaseLedgerBtn = document.querySelector('.sub-tab-btn[data-ledger="purchase"]');
+            if (saleLedgerBtn && purchaseLedgerBtn) {
+                saleLedgerBtn.onclick = () => { saleLedgerBtn.classList.add('active'); purchaseLedgerBtn.classList.remove('active'); document.getElementById('saleLedgerPane').classList.add('active-pane'); document.getElementById('purchaseLedgerPane').classList.remove('active-pane'); document.getElementById('saleLedgerPane').innerHTML = renderSaleLedger(); attachLedgerDeleteEvents(); };
+                purchaseLedgerBtn.onclick = () => { purchaseLedgerBtn.classList.add('active'); saleLedgerBtn.classList.remove('active'); document.getElementById('purchaseLedgerPane').classList.add('active-pane'); document.getElementById('saleLedgerPane').classList.remove('active-pane'); document.getElementById('purchaseLedgerPane').innerHTML = renderPurchaseLedger(); attachLedgerDeleteEvents(); };
+            }
+            attachLedgerDeleteEvents();
+        }
+        else if (moduleKey === 'supplierMgmt') {
+            document.getElementById('addSupplierDynamic')?.addEventListener('click', addSupplier);
+            document.querySelectorAll('.update-supplier-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const supplierId = btn.getAttribute('data-id');
+                    updateSupplier(supplierId);
+                };
+            });
+            document.querySelectorAll('.del-supplier-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const supplierId = btn.getAttribute('data-id');
+                    deleteSupplier(supplierId);
+                };
+            });
+        }
+        else if (moduleKey === 'ledgerQuery') {
+            const searchBtn = document.getElementById('searchBtn');
+            const keywordInput = document.getElementById('queryKeyword');
+            if (searchBtn && keywordInput) {
+                const doSearch = () => performSearch(keywordInput.value);
+                searchBtn.onclick = doSearch;
+                keywordInput.onkeypress = (e) => { if (e.key === 'Enter') doSearch(); };
+            }
+        }
+        else if (moduleKey === 'dataExport') {
+            const exportBtn = document.getElementById('exportBtn');
+            if (exportBtn) {
+                exportBtn.onclick = exportDataToCSV;
+            }
+        }
+    }
+    function attachReceiptDeleteEvents() { document.querySelectorAll('.del-receipt-btn').forEach(btn => { btn.onclick = (e) => { let id = btn.getAttribute('data-id'); if (confirm('删除该收款记录？')) { const index = receiptRecords.findIndex(r => r.id === id); if (index !== -1) receiptRecords.splice(index, 1); persistData(); document.getElementById('receiptList').innerHTML = renderReceiptRecords(); attachReceiptDeleteEvents(); } }; }); }
+    function attachPaymentDeleteEvents() { document.querySelectorAll('.del-payment-btn').forEach(btn => { btn.onclick = (e) => { let id = btn.getAttribute('data-id'); if (confirm('删除该付款记录？')) { const index = paymentRecords.findIndex(p => p.id === id); if (index !== -1) paymentRecords.splice(index, 1); persistData(); document.getElementById('paymentList').innerHTML = renderPaymentRecords(); attachPaymentDeleteEvents(); } }; }); }
+    function attachLedgerDeleteEvents() { document.querySelectorAll('.del-sale-btn').forEach(btn => { btn.onclick = (e) => { let id = btn.getAttribute('data-id'); if (confirm(`删除销售合同 ${id}？`)) { saleContracts = saleContracts.filter(c => c.id !== id); updateSaleSeq(); persistData(); refreshCurrentModule('contractLedger'); } }; }); document.querySelectorAll('.del-purchase-btn').forEach(btn => { btn.onclick = (e) => { let id = btn.getAttribute('data-id'); if (confirm(`删除采购合同 ${id}？`)) { purchaseContracts = purchaseContracts.filter(c => c.id !== id); updatePurchaseSeq(); persistData(); refreshCurrentModule('contractLedger'); } }; }); }
+    function refreshCurrentModule(moduleKey) { if (currentActiveModule === moduleKey && document.getElementById('moduleModal').classList.contains('active')) { let title = document.getElementById('modalTitle').innerText.split('·')[0].trim().replace('📌', '').trim(); openModuleModal(moduleKey, title); } else { renderMainGrid(); } }
+    function closeModal() { document.getElementById('moduleModal').classList.remove('active'); currentActiveModule = null; renderMainGrid(); }
+    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    document.getElementById('modalCloseFooter').addEventListener('click', closeModal);
+    document.getElementById('moduleModal').addEventListener('click', (e) => { if(e.target === document.getElementById('moduleModal')) closeModal(); });
+    
+    // 初始化：加载存储的数据
+    loadDataFromStorage();
+    updateSaleSeq();
+    updatePurchaseSeq();
+    renderMainGrid();
+</script>
+</body>
+</html>
